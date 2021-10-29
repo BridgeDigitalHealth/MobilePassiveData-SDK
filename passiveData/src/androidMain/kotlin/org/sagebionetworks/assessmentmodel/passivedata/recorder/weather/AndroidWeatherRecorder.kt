@@ -56,7 +56,9 @@ class AndroidWeatherRecorder(
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            Napier.i("No permissions for location")
+            Napier.i("No location permission")
+            _asyncStatus = AsyncActionStatus.FAILED
+            result.cancel(CancellationException("No location permission"))
             return
         }
 

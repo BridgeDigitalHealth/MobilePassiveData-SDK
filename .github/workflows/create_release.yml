@@ -3,7 +3,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0
+      - 'android-*' # Push events to matching android-*, i.e. android-1.0
 
 jobs:
   publish:

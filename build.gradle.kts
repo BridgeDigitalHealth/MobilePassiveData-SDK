@@ -18,7 +18,7 @@ plugins {
 
 allprojects {
     group = "org.sagebionetworks.research.kmm"
-    version = "0.3.0-SNAPSHOT"
+    version = "0.3.0"
     repositories {
         google()
         mavenCentral()

@@ -15,13 +15,10 @@ import org.sagebionetworks.assessmentmodel.passivedata.recorder.SampleRecord
  */
 @Serializable
 data class AudioLevelRecord(
-    override val timestampDate: Instant?,
-    override val timestamp: Long?,
-    val uptime: Long?,
-    val timeInterval: Long?,
-    val average: Float?,
-    val peak: Float?,
-    val unit: String?
-) :
-    SampleRecord {
-}
+    val timestampDate: Instant?,
+    val timestamp: Double?,
+    val uptime: Double?,
+    val timeInterval: Double?,
+    val peak: Int?,
+    val unit: String = "maxAmplitude"
+)

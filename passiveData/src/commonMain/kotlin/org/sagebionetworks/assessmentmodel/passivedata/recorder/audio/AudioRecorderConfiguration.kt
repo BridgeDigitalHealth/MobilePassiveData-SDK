@@ -31,5 +31,6 @@ data class AudioRecorderConfiguration(
 
     companion object {
         const val TYPE = "microphone"
+        const val SAMPLE_INTERVAL_MILLISECONDS: Long = 1000
     }
 }

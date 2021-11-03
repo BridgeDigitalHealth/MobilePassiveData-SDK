@@ -79,6 +79,10 @@ class AndroidWeatherRecorder(
     override fun cancel() {
         cancellationTokenSource.cancel()
         _asyncStatus = AsyncActionStatus.CANCELLED
+        if (result.isActive) {
+            _asyncStatus = AsyncActionStatus.FAILED
+            result.cancel(CancellationException("Cancel called"))
+        }
     }
 
     @RequiresPermission(
@@ -105,10 +109,11 @@ class AndroidWeatherRecorder(
                 if (currentLocation.result == null) {
                     Napier.w("Retrieved null location")
                     result.complete(null)
+                } else {
+                    result.complete(with(currentLocation.result) {
+                        Location(longitude = longitude, latitude = latitude)
+                    })
                 }
-                result.complete(with(currentLocation.result) {
-                    Location(longitude = longitude, latitude = latitude)
-                })
             } else if (task.exception != null) {
                 Napier.e("Encountered exception while retrieving location", task.exception)
                 result.completeExceptionally(task.exception!!)

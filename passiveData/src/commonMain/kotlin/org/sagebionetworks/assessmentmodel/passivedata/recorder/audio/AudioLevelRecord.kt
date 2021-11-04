@@ -15,7 +15,7 @@ import org.sagebionetworks.assessmentmodel.passivedata.recorder.SampleRecord
  */
 @Serializable
 data class AudioLevelRecord(
-    val timestampDate: Instant?,
+    val timestampDate: Instant? = null,
     val timestamp: Double?,
     val uptime: Double?,
     val timeInterval: Double?,

@@ -4,6 +4,7 @@ import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.supervisorScope
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.Recorder
@@ -19,6 +20,7 @@ abstract class WeatherRecorder(override val configuration: WeatherConfiguration,
         Napier.d("Location: $location")
         if (location == null) {
             Napier.w("No location available, unable to start recorder")
+            result.cancel(CancellationException("No location permission"))
             return
         }
 

@@ -48,14 +48,13 @@ let package = Package(
         .library(
             name: "DistanceRecorder",
             targets: ["DistanceRecorder"]),
-
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
         .package(name: "JsonModel",
                  url: "https://github.com/Sage-Bionetworks/JsonModel-Swift.git",
-                 from: "1.2.0"),
+                 from: "1.3.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

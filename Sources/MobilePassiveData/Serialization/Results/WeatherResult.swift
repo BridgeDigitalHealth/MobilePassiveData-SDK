@@ -66,6 +66,34 @@ public final class WeatherResult : SerializableResultData {
     }
 }
 
+extension WeatherResult : FileArchivable {
+    public func buildArchivableData(at stepPath: String?) throws -> (fileInfo: FileInfo, data: Data)? {
+        let fileInfo = FileInfo(filename: "\(identifier).json",
+                                timestamp: startDate,
+                                contentType: "application/json",
+                                identifier: identifier,
+                                stepPath: stepPath,
+                                jsonSchema: self.jsonSchema,
+                                metadata: nil)
+        let data = try self.jsonEncodedData()
+        return (fileInfo, data)
+    }
+}
+
+extension WeatherResult : DocumentableRootObject {
+    public convenience init() {
+        self.init(identifier: "weather")
+    }
+    
+    public var jsonSchema: URL {
+        URL(string: "\(type(of: self)).json", relativeTo: kSageJsonSchemaBaseURL)!
+    }
+    
+    public var documentDescription: String? {
+        "A `WeatherResult` includes results for both weather and air quality in a consolidated result."
+    }
+}
+
 extension WeatherResult : DocumentableStruct {
 
     public static func codingKeys() -> [CodingKey] {

@@ -557,15 +557,27 @@ open class SampleRecorder : NSObject, AsyncActionController {
             }
         }
     }
+    
+    open private(set) var schemaDoc : DocumentableRootArray?
 
     open func instantiateFileResult(for fileHandle: LogFileHandle) -> FileResultObject {
         // The result identifier is the logger identifer without the section identifier prefix
         let identifier = fileHandle.identifier.hasPrefix(filePrefix) ?
             String(fileHandle.identifier.dropFirst(filePrefix.count)) : fileHandle.identifier
-        var fileResult = FileResultObject(identifier: identifier,
-                                          url: fileHandle.url,
-                                          contentType: fileHandle.contentType,
-                                          startUptime: self.clock.startSystemUptime)
+        var fileResult: FileResultObject = {
+            if let schema = self.schemaDoc {
+                return .init(identifier: identifier,
+                             url: fileHandle.url,
+                             rootSchema: schema,
+                             startUptime: self.clock.startSystemUptime)
+            }
+            else {
+                return .init(identifier: identifier,
+                             url: fileHandle.url,
+                             contentType: fileHandle.contentType,
+                             startUptime: self.clock.startSystemUptime)
+            }
+        }()
         fileResult.startDate = self.startDate
         fileResult.endDate = Date()
         return fileResult

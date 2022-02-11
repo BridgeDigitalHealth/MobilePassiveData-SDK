@@ -34,6 +34,7 @@
 
 import Foundation
 import MobilePassiveData
+import JsonModel
 
 #if canImport(AVFoundation)
 import AVFoundation
@@ -82,6 +83,8 @@ public class AudioRecorder : SampleRecorder, AVAudioRecorderDelegate {
     
     private var audioFileHandle: AudioFileHandle?
     private var audioRecorder: AVAudioRecorder?
+    
+    override public var schemaDoc: DocumentableRootArray? { audioLevelRecordSchema }
     
     /// Override to implement requesting permission to access the participant's microphone.
     override public func requestPermissions(on viewController: Any, _ completion: @escaping AsyncActionCompletionHandler) {

@@ -142,6 +142,8 @@ public class DistanceRecorder : SampleRecorder, CLLocationManagerDelegate {
         }
         return isOutdoors
     }
+    
+    override public var schemaDoc: DocumentableRootArray? { distanceRecordSchema }
 
     // MARK: Recorder state management
 

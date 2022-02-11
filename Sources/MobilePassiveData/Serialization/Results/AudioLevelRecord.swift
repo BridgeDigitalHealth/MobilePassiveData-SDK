@@ -32,8 +32,11 @@
 //
 
 import Foundation
-import MobilePassiveData
 import JsonModel
+
+public let audioLevelRecordSchema = DocumentableRootArray(rootDocumentType: AudioLevelRecord.self,
+                                              jsonSchema: .init(string: "\(AudioLevelRecord.self).json", relativeTo: kSageJsonSchemaBaseURL)!,
+                                              documentDescription: "A list of timestamped dbFS audio level records recorded for the duration of an assessment.")
 
 public struct AudioLevelRecord : SampleRecord, Codable {
     private enum CodingKeys : String, CodingKey, CaseIterable {
@@ -63,6 +66,24 @@ public struct AudioLevelRecord : SampleRecord, Codable {
 
     /// The unit of measurement for the decibel levels.
     public let unit: String?
+    
+    public init(uptime: TimeInterval?,
+                timestamp: TimeInterval?,
+                stepPath: String,
+                timestampDate: Date? = nil,
+                timeInterval: TimeInterval?,
+                average: Float?,
+                peak: Float?,
+                unit: String?) {
+        self.uptime = uptime
+        self.timestamp = timestamp
+        self.stepPath = stepPath
+        self.timestampDate = timestampDate
+        self.timeInterval = timeInterval
+        self.average = average
+        self.peak = peak
+        self.unit = unit
+    }
 }
 
 extension AudioLevelRecord : DocumentableStruct {

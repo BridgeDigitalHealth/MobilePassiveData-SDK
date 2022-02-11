@@ -47,11 +47,7 @@ class JsonDocumentableTests: XCTestCase {
 
     func testCreateJsonSchemaDocumentation() {
         let factory = MobilePassiveDataFactory()
-        let baseUrl = URL(string: "http://sagebionetworks.org/SageResearch/jsonSchema/")!
-
-        let doc = JsonDocumentBuilder(baseUrl: baseUrl,
-                                      factory: factory,
-                                      rootDocuments: [])
+        let doc = JsonDocumentBuilder(factory: factory)
 
         do {
             let _ = try doc.buildSchemas()            

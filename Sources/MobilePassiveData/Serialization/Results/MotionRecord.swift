@@ -32,8 +32,11 @@
 //
 
 import Foundation
-import MobilePassiveData
 import JsonModel
+
+public let motionRecordSchema = DocumentableRootArray(rootDocumentType: MotionRecord.self,
+                                          jsonSchema: .init(string: "\(MotionRecord.self).json", relativeTo: kSageJsonSchemaBaseURL)!,
+                                          documentDescription: "A list of motion sensor records.")
 
 /// A `MotionRecord` is a `Codable` implementation of `SampleRecord` that can be used
 /// to record a sample from one of the core motion sensors or calculated vectors of the

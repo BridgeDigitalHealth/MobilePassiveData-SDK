@@ -67,7 +67,7 @@ public final class WeatherResult : SerializableResultData {
 }
 
 extension WeatherResult : FileArchivable {
-    public func buildArchivableData(at stepPath: String?) throws -> (fileInfo: FileInfo, data: Data)? {
+    public func buildArchivableFileData(at stepPath: String?) throws -> (fileInfo: FileInfo, data: Data)? {
         let fileInfo = FileInfo(filename: "\(identifier).json",
                                 timestamp: startDate,
                                 contentType: "application/json",

@@ -36,6 +36,7 @@ import UIKit
 import CoreMotion
 import MobilePassiveData
 import AVFoundation
+import JsonModel
 
 extension Notification.Name {
     /// Notification name posted by a `MotionRecorder` instance when it is starting. If you intend to

@@ -52,5 +52,6 @@ open class MobilePassiveDataFactory : ResultDataFactory {
         self.registerRootObject(audioLevelRecordSchema)
         self.registerRootObject(distanceRecordSchema)
         self.registerRootObject(motionRecordSchema)
+        self.registerRootObject(WeatherResult())
     }
 }

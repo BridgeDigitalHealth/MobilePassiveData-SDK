@@ -45,8 +45,6 @@ open class MobilePassiveDataFactory : ResultDataFactory {
         
         // Add weather results
         self.resultSerializer.add(WeatherResult())
-        self.resultSerializer.add(AirQualityServiceResult.examples().first!)
-        self.resultSerializer.add(WeatherServiceResult.examples().first!)
         
         // Add root documentables
         self.registerRootObject(audioLevelRecordSchema)

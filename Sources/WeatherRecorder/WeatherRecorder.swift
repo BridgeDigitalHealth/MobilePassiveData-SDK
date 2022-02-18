@@ -36,7 +36,7 @@ import MobilePassiveData
 import JsonModel
 import LocationAuthorization
 
-public typealias WeatherServiceCompletionHandler = (WeatherService, [ResultData]?, Error?) -> Void
+public typealias WeatherServiceCompletionHandler = (WeatherService, [WeatherServiceResponse]?, Error?) -> Void
 
 public protocol WeatherService : AnyObject {
     var configuration: WeatherServiceConfiguration { get }
@@ -255,7 +255,7 @@ open class WeatherRecorder : NSObject, AsyncActionController, CLLocationManagerD
         }
     }
     
-    func processServiceResults(_ results: [ResultData]) {
+    func processServiceResults(_ results: [WeatherServiceResponse]) {
         guard self.status <= .running else { return }
         results.forEach { (result) in
             switch result {

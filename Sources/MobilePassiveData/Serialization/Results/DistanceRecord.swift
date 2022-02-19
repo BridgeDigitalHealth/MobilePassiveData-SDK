@@ -117,7 +117,7 @@ public struct DistanceRecord: SampleRecord, DelimiterSeparatedEncodable {
     /// Returns the floor of the building where the location was recorded; null if floor is not available.
     public let floor: Int?
     
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case uptime, timestamp, stepPath, timestampDate, timestampUnix, horizontalAccuracy, relativeDistance, latitude, longitude, verticalAccuracy, altitude, totalDistance, course, bearingRadians, speed, floor
     }
     

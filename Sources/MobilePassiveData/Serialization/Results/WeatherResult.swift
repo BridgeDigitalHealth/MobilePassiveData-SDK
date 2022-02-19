@@ -41,7 +41,7 @@ extension SerializableResultType {
 /// A `WeatherResult` includes results for both weather and air quality in a consolidated result.
 /// Because this result must be mutable, it is defined as a class.
 public final class WeatherResult : SerializableResultData {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case identifier, serializableType = "type", startDate, endDate, weather, airQuality
     }
     public private(set) var serializableType: SerializableResultType = .weather
@@ -143,7 +143,7 @@ public protocol WeatherServiceResponse {
 }
 
 public struct WeatherServiceResult : Codable, Equatable, WeatherServiceResponse {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case serviceType = "type", identifier, providerName = "provider", startDate,
              temperature, seaLevelPressure, groundLevelPressure, humidity, clouds, rain, snow, wind
     }
@@ -329,7 +329,7 @@ extension WeatherServiceResult.Wind : DocumentableStruct {
 }
 
 public struct AirQualityServiceResult : Codable, Equatable, WeatherServiceResponse {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case serviceType = "type", identifier, providerName = "provider", startDate, aqi, category
     }
     public private(set) var serviceType: WeatherServiceType = .airQuality

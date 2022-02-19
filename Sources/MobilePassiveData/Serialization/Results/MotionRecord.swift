@@ -106,7 +106,7 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     /// Used by the attitude quaternion.
     public let w: Double?
 
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case uptime, timestamp, stepPath, timestampDate, sensorType, eventAccuracy, referenceCoordinate, heading, x, y, z, w
     }
 

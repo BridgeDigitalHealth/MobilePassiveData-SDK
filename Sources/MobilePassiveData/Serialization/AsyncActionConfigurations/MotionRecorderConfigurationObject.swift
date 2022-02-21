@@ -130,7 +130,7 @@ extension MotionRecorderConfigurationObject : DocumentableStruct {
         case .recorderTypes:
             return .init(propertyType: .referenceArray(MotionRecorderType.documentableType()), propertyDescription: "The motion sensor types to include with this configuration.")
         case .usesCSVEncoding:
-            return .init(defaultValue: .boolean(false), propertyDescription: "Should samples be encoded as a CSV file.")
+            return .init(defaultValue: .boolean(false), propertyDescription: "Should samples be encoded as a CSV file?")
         }
     }
     

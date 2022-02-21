@@ -252,7 +252,7 @@ extension DistanceRecord : DocumentableStruct {
         case .longitude:
             return .init(propertyType: .primitive(.number), propertyDescription: "The longitude coordinate of the current location; null if *only* relative distance should be recorded.")
         case .verticalAccuracy:
-            return .init(propertyType: .primitive(.number), propertyDescription: "The vertical accuracy of the location in meters; null if the lateral location is invalid.")
+            return .init(propertyType: .primitive(.number), propertyDescription: "The vertical accuracy of the location in meters; null if the vertical location is invalid.")
         case .altitude:
             return .init(propertyType: .primitive(.number), propertyDescription: "The altitude of the location in meters. Can be positive (above sea level) or negative (below sea level).")
         case .totalDistance:

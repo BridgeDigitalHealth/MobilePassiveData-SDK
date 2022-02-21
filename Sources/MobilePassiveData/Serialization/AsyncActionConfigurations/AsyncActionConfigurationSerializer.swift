@@ -90,7 +90,7 @@ extension SerializableAsyncActionConfiguration {
 public final class AsyncActionConfigurationSerializer : IdentifiableInterfaceSerializer, PolymorphicSerializer {
     public var documentDescription: String? {
         """
-        `AsyncActionConfiguration` defines general configuration for an asynchronous background action
+        `AsyncActionConfiguration` defines general configuration for an asynchronous action
         that should be run in the background. Depending upon the parameters and how the action is set
         up, this could be something that is run continuously or else is paused or reset based on a
         timeout interval.

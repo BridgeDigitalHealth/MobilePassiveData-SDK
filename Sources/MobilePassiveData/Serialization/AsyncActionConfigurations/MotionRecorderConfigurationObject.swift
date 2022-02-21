@@ -52,7 +52,7 @@ import JsonModel
 ///            """.data(using: .utf8)! // our data in native (JSON) format
 /// ```
 public struct MotionRecorderConfigurationObject : MotionRecorderConfiguration, Codable {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case identifier, asyncActionType = "type", recorderTypes, startStepIdentifier, stopStepIdentifier, frequency, _requiresBackgroundAudio = "requiresBackgroundAudio", usesCSVEncoding, _shouldDeletePrevious = "shouldDeletePrevious"
     }
 

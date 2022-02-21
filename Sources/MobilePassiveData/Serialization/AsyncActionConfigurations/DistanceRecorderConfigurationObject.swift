@@ -51,7 +51,7 @@ import JsonModel
 /// ```
 @available(iOS 10.0, *)
 public struct DistanceRecorderConfigurationObject : DistanceRecorderConfiguration, Codable {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case identifier, asyncActionType = "type", motionStepIdentifier, startStepIdentifier, stopStepIdentifier, usesCSVEncoding
     }
     

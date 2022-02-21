@@ -39,7 +39,7 @@ public let audioLevelRecordSchema = DocumentableRootArray(rootDocumentType: Audi
                                               documentDescription: "A list of timestamped dbFS audio level records recorded for the duration of an assessment.")
 
 public struct AudioLevelRecord : SampleRecord, Codable {
-    private enum CodingKeys : String, CodingKey, CaseIterable {
+    private enum CodingKeys : String, OrderedEnumCodingKey {
         case uptime, timestamp, stepPath, timestampDate, timeInterval, average, peak, unit
     }
 

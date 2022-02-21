@@ -35,7 +35,7 @@ import Foundation
 import JsonModel
 
 public struct WeatherConfigurationObject : WeatherConfiguration {
-    private enum CodingKeys: String, CodingKey, CaseIterable {
+    private enum CodingKeys: String, OrderedEnumCodingKey {
         case asyncActionType = "type", identifier, startStepIdentifier, _services = "services"
     }
 

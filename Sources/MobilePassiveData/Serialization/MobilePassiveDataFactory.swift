@@ -32,10 +32,11 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// `MobilePassiveDataFactory` is a subclass of the `ResultDataFactory` that registers a serializer
 /// for `AsyncActionConfiguration` objects that can be used to deserialize the results.
-open class MobilePassiveDataFactory : ResultDataFactory {
+open class MobilePassiveDataFactory : AssessmentFactory {
 
     public let asyncActionSerializer = AsyncActionConfigurationSerializer()
 

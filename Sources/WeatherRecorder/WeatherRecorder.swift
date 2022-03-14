@@ -34,6 +34,7 @@ import Foundation
 import CoreLocation
 import MobilePassiveData
 import JsonModel
+import AssessmentModel
 import LocationAuthorization
 
 public typealias WeatherServiceCompletionHandler = (WeatherService, [WeatherServiceResponse]?, Error?) -> Void

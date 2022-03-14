@@ -33,6 +33,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 
 /// `SampleRecorder` is a base-class implementation of a controller that is used to record samples.

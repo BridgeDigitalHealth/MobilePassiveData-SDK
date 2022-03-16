@@ -33,6 +33,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// `AsyncActionVendor` is an extension of the configuration protocol for configurations that
 /// know how to vend a new controller.

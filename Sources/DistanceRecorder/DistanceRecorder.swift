@@ -38,7 +38,7 @@ import CoreMotion
 import MobilePassiveData
 import JsonModel
 import MotionSensor
-
+import AssessmentModel
 
 /// `DistanceRecorder` is intended to be used for recording location where the participant is walking,
 /// running, cycling, or other activities **outdoors** where the distance travelled is of interest. By

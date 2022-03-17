@@ -34,6 +34,7 @@
 import XCTest
 @testable import MobilePassiveData
 import JsonModel
+import AssessmentModel
 
 class JsonDocumentableTests: XCTestCase {
 
@@ -55,8 +56,6 @@ class JsonDocumentableTests: XCTestCase {
         catch let err {
             XCTFail("Failed to build the JsonSchema: \(err)")
         }
-        
-        print("foo")
     }
 
     func testSerializers() {

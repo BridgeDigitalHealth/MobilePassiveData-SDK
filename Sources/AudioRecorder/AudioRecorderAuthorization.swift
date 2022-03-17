@@ -1,7 +1,7 @@
 //
 //  AudioRecorderAuthorization.swift
 //
-//  Copyright © 2020-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2020-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@
 
 import Foundation
 import MobilePassiveData
+import AssessmentModel
 
 #if canImport(AVFoundation)
 import AVFoundation
@@ -52,11 +53,11 @@ public final class AudioRecorderAuthorization : PermissionAuthorizationAdaptor {
     public static let shared = AudioRecorderAuthorization()
     
     /// This adaptor is intended for checking for audio recording permission.
-    public let permissions: [PermissionType] = [StandardPermissionType.microphone]
+    public let permissions: [PermissionType] = [.microphone]
     
     /// Returns the authorization status for recording audio.
     public func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
-        guard permission == StandardPermissionType.microphone.rawValue else { return .notDetermined }
+        guard permission == PermissionType.microphone.name else { return .notDetermined }
         return AudioRecorderAuthorization.authorizationStatus()
     }
     
@@ -77,8 +78,8 @@ public final class AudioRecorderAuthorization : PermissionAuthorizationAdaptor {
     }
     
     /// Requests permission to record.
-    public func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
-        guard permission.identifier == StandardPermissionType.microphone.rawValue else {
+    public func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
+        guard permission.permissionType == .microphone else {
             completion(.notDetermined, nil)
             return
         }

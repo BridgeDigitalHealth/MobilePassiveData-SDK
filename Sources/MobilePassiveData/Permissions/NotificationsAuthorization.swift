@@ -2,7 +2,7 @@
 //  NotificationsAuthorization.swift
 //  
 //
-//  Copyright © 2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2021-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -33,6 +33,7 @@
 
 import Foundation
 import UserNotifications
+import AssessmentModel
 
 /// An authorization adapator for use when requesting permission to send local notifications. Typically, this will
 /// be used during onboarding to request sending the participant notifications.
@@ -43,13 +44,13 @@ public final class NotificationsAuthorization : PermissionAuthorizationAdaptor {
     
     public static let shared = NotificationsAuthorization()
         
-    public let permissions: [PermissionType] = [StandardPermissionType.notifications]
+    public let permissions: [PermissionType] = [.notifications]
     
     public func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
         .notDetermined
     }
     
-    public func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
+    public func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { (status, error) in
             DispatchQueue.main.async {
                 completion(status ? .authorized : .denied, error)

@@ -1,7 +1,7 @@
 //
 //  LocationAuthorization.swift
 //
-//  Copyright © 2018-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2018-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -33,6 +33,7 @@
 import Foundation
 import CoreLocation
 import MobilePassiveData
+import AssessmentModel
 
 /// `LocationAuthorization` is a wrapper for the CoreLocation library that allows a general-purpose
 /// step or task to query this library for authorization if and only if that library is required by
@@ -54,30 +55,22 @@ public final class LocationAuthorization : NSObject, PermissionAuthorizationAdap
     public static let shared = LocationAuthorization()
         
     public let permissions: [PermissionType] = [
-        StandardPermissionType.location,
-        StandardPermissionType.locationWhenInUse,
+        .location,
+        .locationWhenInUse,
+        .weather,
     ]
 
     /// Returns the authorization status for the location manager.
     public func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
-        _authStatus(for: permission).status
-    }
-    
-    private func _authStatus(for permission: String) -> (status: PermissionAuthorizationStatus, permissionType: StandardPermissionType?) {
-        guard let permissionType = StandardPermissionType(rawValue: permission),
-              self.permissions.contains(where: { $0.identifier == permissionType.identifier })
-            else {
-                return (.notDetermined, nil)
-        }
-        return (authorizationStatus(for: permissionType), permissionType)
+        authorizationStatus(for: .init(permission))
     }
     
     /// Returns authorization status for `.location` and `.locationWhenInUse` permissions.
-    public func authorizationStatus(for permission: StandardPermissionType) -> PermissionAuthorizationStatus {
+    public func authorizationStatus(for permission: PermissionType) -> PermissionAuthorizationStatus {
         switch permission {
         case .location:
             return _locationAuthorizationStatus(true)
-        case .locationWhenInUse:
+        case .locationWhenInUse, .weather:
             return _locationAuthorizationStatus(false)
         default:
             return .notDetermined
@@ -113,13 +106,14 @@ public final class LocationAuthorization : NSObject, PermissionAuthorizationAdap
     private var locationManager: CLLocationManager = CLLocationManager()
     
     private var _completion: ((PermissionAuthorizationStatus, Error?) -> Void)?
-    private var _requestingType: StandardPermissionType?
+    private var _requestingType: PermissionType?
     
     /// Requests permission to access the device location.
-    public func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
+    public func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
         DispatchQueue.main.async {
-            let (status, pType) = self._authStatus(for: permission.identifier)
-            guard status == .notDetermined, let permissionType = pType else {
+            let permissionType = permission.permissionType
+            let status = self.authorizationStatus(for: permissionType)
+            guard status == .notDetermined, self.permissions.contains(permissionType) else {
                 completion(status, nil)
                 return
             }

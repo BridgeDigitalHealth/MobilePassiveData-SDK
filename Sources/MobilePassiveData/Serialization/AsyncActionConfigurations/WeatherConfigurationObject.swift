@@ -33,6 +33,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 public struct WeatherConfigurationObject : WeatherConfiguration {
     private enum CodingKeys: String, OrderedEnumCodingKey {
@@ -54,13 +55,6 @@ public struct WeatherConfigurationObject : WeatherConfiguration {
         _services
     }
     private let _services: [WeatherServiceConfigurationObject]
-    
-    public var permissionTypes: [PermissionType] {
-        [StandardPermissionType.locationWhenInUse]
-    }
-    
-    public func validate() throws {
-    }
 }
 
 extension WeatherConfigurationObject : SerializableAsyncActionConfiguration {

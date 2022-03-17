@@ -64,7 +64,7 @@ class CodableMotionRecorderTests: XCTestCase {
         let permission = StandardPermission(permissionType: .motion)
         XCTAssertEqual(permission.deniedMessage, "You have not given this app permission to use the motion and fitness sensors. You can enable access by turning on 'Motion & Fitness' in the Privacy Settings.")
         XCTAssertTrue(permission.requestIfNeeded)
-        XCTAssertFalse(permission.isOptional)
+        XCTAssertFalse(permission.optional)
     }
     
     func testStandardPermission_DefaultCodable() {
@@ -101,12 +101,10 @@ class CodableMotionRecorderTests: XCTestCase {
             let decodedObject = try decoder.decode(StandardPermission.self, from: data)
             
             XCTAssertEqual(.camera, decodedObject.permissionType)
-            XCTAssertEqual("Camera Permission", decodedObject.title)
-            XCTAssertEqual("A picture tells a thousand words.", decodedObject.reason)
             XCTAssertEqual("Your access to the camera is restricted.", decodedObject.restrictedMessage)
             XCTAssertEqual("You have previously denied permission for this app to use the camera.", decodedObject.deniedMessage)
             XCTAssertFalse(decodedObject.requestIfNeeded)
-            XCTAssertTrue(decodedObject.isOptional)
+            XCTAssertTrue(decodedObject.optional)
         
         } catch let err {
             XCTFail("Failed to decode/encode object: \(err)")

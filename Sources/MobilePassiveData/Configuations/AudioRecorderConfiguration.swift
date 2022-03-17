@@ -2,7 +2,7 @@
 //  AudioRecorderConfiguration.swift
 //  
 //
-//  Copyright © 2020-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2020-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@
 //
 
 import Foundation
+import AssessmentModel
 
 public protocol AudioRecorderConfiguration : RecorderConfiguration {
     /// Should the audio recording be saved? Default = `false`.
@@ -40,4 +41,10 @@ public protocol AudioRecorderConfiguration : RecorderConfiguration {
     /// Otherwise, the audio file recorded is assumed to be a temporary file and should be deleted
     /// when the recording stops.
     var saveAudioFile: Bool? { get }
+}
+
+public extension AudioRecorderConfiguration {
+    var permissionTypes: [PermissionType] {
+        [.microphone]
+    }
 }

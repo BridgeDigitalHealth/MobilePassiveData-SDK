@@ -32,6 +32,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// The default configuration to use for a `MotionSensor.MotionRecorder`.
 ///
@@ -89,10 +90,6 @@ public struct MotionRecorderConfigurationObject : MotionRecorderConfiguration, C
         self.frequency = frequency
         self._shouldDeletePrevious = shouldDeletePrevious
         self.usesCSVEncoding = usesCSVEncoding
-    }
-    
-    /// Do nothing. No validation is required for this recorder.
-    public func validate() throws {
     }
 }
 

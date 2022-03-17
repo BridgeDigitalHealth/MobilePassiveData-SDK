@@ -1,7 +1,7 @@
 //
 //  MotionAuthorization.swift
 //
-//  Copyright © 2018-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2018-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -36,6 +36,7 @@ import UIKit
 import Foundation
 import CoreMotion
 import MobilePassiveData
+import AssessmentModel
 
 fileprivate let _userDefaultsKey = "rsd_MotionAuthorizationStatus"
 
@@ -78,7 +79,7 @@ public final class MotionAuthorization : PermissionAuthorizationAdaptor {
     }
     
     /// This adaptor is intended for checking for motion sensor permissions.
-    public let permissions: [PermissionType] = [StandardPermissionType.motion]
+    public let permissions: [PermissionType] = [.motion]
     
     /// Returns the authorization status for the motion sensors.
     public func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
@@ -86,7 +87,7 @@ public final class MotionAuthorization : PermissionAuthorizationAdaptor {
     }
     
     /// Requests permission to access the motion sensors.
-    public func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
+    public func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
         return MotionAuthorization.requestAuthorization(completion)
     }
     

@@ -38,11 +38,15 @@ import AssessmentModel
 /// for `AsyncActionConfiguration` objects that can be used to deserialize the results.
 open class MobilePassiveDataFactory : AssessmentFactory {
 
-    public let asyncActionSerializer = AsyncActionConfigurationSerializer()
 
     public required init() {
         super.init()
-        self.registerSerializer(asyncActionSerializer)
+
+        // Add async action configurations
+        self.asyncActionSerializer.add(AudioRecorderConfigurationObject.examples().first!)
+        self.asyncActionSerializer.add(DistanceRecorderConfigurationObject.examples().first!)
+        self.asyncActionSerializer.add(MotionRecorderConfigurationObject.examples().first!)
+        self.asyncActionSerializer.add(WeatherConfigurationObject.examples().first!)
         
         // Add weather results
         self.resultSerializer.add(WeatherResult())

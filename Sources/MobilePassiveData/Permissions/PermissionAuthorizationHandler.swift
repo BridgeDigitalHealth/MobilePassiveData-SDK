@@ -1,7 +1,7 @@
 //
 //  PermissionAuthorizationHandler.swift
 //
-//  Copyright © 2019-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2019-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -31,7 +31,7 @@
 //
 
 import Foundation
-
+import AssessmentModel
 
 /// An authorization adapter is a class that can manage requesting authorization for a given permission.
 public protocol PermissionAuthorizationAdaptor : AnyObject {
@@ -43,10 +43,10 @@ public protocol PermissionAuthorizationAdaptor : AnyObject {
     func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus
     
     /// Requesting the authorization.
-    func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void))
+    func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void))
 }
 
-@objc public final class PermissionAuthorizationHandler : NSObject {
+public final class PermissionAuthorizationHandler : NSObject {
     
     private static var adaptors: [String : PermissionAuthorizationAdaptor] = [:]
     
@@ -55,14 +55,14 @@ public protocol PermissionAuthorizationAdaptor : AnyObject {
     /// state that may be held by the adaptor could be lost.
     public static func registerAdaptorIfNeeded(_ adaptor: PermissionAuthorizationAdaptor) {
         adaptor.permissions.forEach {
-            guard adaptors[$0.identifier] == nil else { return }
-            adaptors[$0.identifier] = adaptor
+            guard adaptors[$0.name] == nil else { return }
+            adaptors[$0.name] = adaptor
         }
     }
     
     /// Returns authorization status the given permission.
-    @objc public static func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
-        guard let adator = adaptors[permission]
+    public static func authorizationStatus(for permission: String) -> PermissionAuthorizationStatus {
+        guard let adaptor = adaptors[permission]
             else {
                 // "Starting Spring 2019, all apps submitted to the App Store that access user data will
                 //  be required to include a purpose string. If you're using external libraries or SDKs,
@@ -77,16 +77,16 @@ public protocol PermissionAuthorizationAdaptor : AnyObject {
                 assertionFailure("\(permission) was not recognized as a registered permission.")
                 return .denied
         }
-        return adator.authorizationStatus(for: permission)
+        return adaptor.authorizationStatus(for: permission)
     }
     
     /// Request authorization for the given permission.
-    @objc public static func requestAuthorization(for permission: Permission, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
-        guard let adator = adaptors[permission.identifier]
+    public static func requestAuthorization(for permission: PermissionInfo, _ completion: @escaping ((PermissionAuthorizationStatus, Error?) -> Void)) {
+        guard let adaptor = adaptors[permission.permissionType.name]
             else {
-                completion(.denied, PermissionError.notHandled("\(permission.identifier) was not recognized as a registered permission."))
+                completion(.denied, PermissionError.notHandled("\(permission.permissionType.name) was not recognized as a registered permission."))
                 return
         }
-        adator.requestAuthorization(for: permission, completion)
+        adaptor.requestAuthorization(for: permission, completion)
     }
 }

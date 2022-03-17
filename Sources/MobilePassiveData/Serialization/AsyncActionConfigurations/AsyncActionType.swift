@@ -1,8 +1,8 @@
 //
-//  AsyncActionConfigurationSerializer.swift
+//  AsyncActionType.swift
 //  
 //
-//  Copyright © 2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2021-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -33,6 +33,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 
 /// `AsyncActionType` is an extendable string enum used by the `SerializationFactory` to
@@ -86,42 +87,4 @@ public protocol SerializableAsyncActionConfiguration : AsyncActionConfiguration,
 extension SerializableAsyncActionConfiguration {
     public var typeName: String { asyncActionType.stringValue }
 }
-
-public final class AsyncActionConfigurationSerializer : IdentifiableInterfaceSerializer, PolymorphicSerializer {
-    public var documentDescription: String? {
-        """
-        `AsyncActionConfiguration` defines general configuration for an asynchronous action
-        that should be run in the background. Depending upon the parameters and how the action is set
-        up, this could be something that is run continuously or else is paused or reset based on a
-        timeout interval.
-        """.replacingOccurrences(of: "\n", with: " ").replacingOccurrences(of: "  ", with: "\n")
-    }
-    
-    public var jsonSchema: URL {
-        URL(string: "\(self.interfaceName).json", relativeTo: kSageJsonSchemaBaseURL)!
-    }
-
-    override init() {
-        self.examples = [
-            AudioRecorderConfigurationObject.examples().first!,
-            DistanceRecorderConfigurationObject.examples().first!,
-            MotionRecorderConfigurationObject.examples().first!,
-            WeatherConfigurationObject.examples().first!,
-        ]
-    }
-
-    public private(set) var examples: [AsyncActionConfiguration]
-
-    public override class func typeDocumentProperty() -> DocumentProperty {
-        .init(propertyType: .reference(AsyncActionType.documentableType()))
-    }
-
-    public func add(_ example: SerializableAsyncActionConfiguration) {
-        if let idx = examples.firstIndex(where: { $0.typeName == example.typeName }) {
-            examples.remove(at: idx)
-        }
-        examples.append(example)
-    }
-}
-
 

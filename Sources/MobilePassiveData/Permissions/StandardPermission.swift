@@ -1,7 +1,7 @@
 //
 //  StandardPermission.swift
 //
-//  Copyright © 2017-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2017-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -32,107 +32,75 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// Standard permission types.
-///
-/// - note: This framework intentionally does not include any direct reference to Health Kit.
-///         First, including Health Kit in applications that do not use that SDK makes it
-///         confusing and difficult for researchers to set up the app. Second, the goal of
-///         this framework is to include a model that is platform-agnostic and can be used
-///         independently of the device. (syoung 11/1/7/2017)
-///
-public enum StandardPermissionType: String, PermissionType, Codable, CaseIterable {
+public extension PermissionType {
     
     /// “Privacy - Camera Usage Description”
     /// Specifies the reason for your app to access the device’s camera.
     /// - seealso: `NSCameraUsageDescription`
-    case camera
+    static let camera: PermissionType = "camera"
     
     /// “Privacy - Location When In Use Usage Description”
     /// Specifies the reason for your app to access the user’s location information while your app is in use.
     /// - seealso: `NSLocationWhenInUseUsageDescription`
-    case locationWhenInUse
+    static let locationWhenInUse: PermissionType = "locationWhenInUse"
     
     /// “Privacy - Location Always Usage Description”
     /// Specifies the reason for your app to access the user’s location information at all times.
     /// - seealso: `NSLocationAlwaysUsageDescription`
-    case location
+    static let location: PermissionType = "location"
     
     /// “Privacy - Microphone Usage Description”
     /// Specifies the reason for your app to access any of the device’s microphones.
     /// - seealso: `NSMicrophoneUsageDescription`
-    case microphone
+    static let microphone: PermissionType = .Standard.microphone.permissionType
     
     /// “Privacy - Motion Usage Description”
     /// Specifies the reason for your app to access the device’s accelerometer.
     /// - seealso: `NSMotionUsageDescription`
-    case motion
+    static let motion: PermissionType = .Standard.motion.permissionType
     
     /// “Privacy - Photo Library Usage Description”
     /// Specifies the reason for your app to access the user’s photo library.
     /// - seealso: `NSPhotoLibraryUsageDescription`
-    case photoLibrary
+    static let photoLibrary: PermissionType = "photoLibrary"
     
     /// Used to request permission to post local notifications.
-    case notifications
+    static let notifications: PermissionType = .Standard.notifications.permissionType
     
-    /// An identifier for the permission.
-    public var identifier: String {
-        return rawValue
-    }
-}
-
-extension StandardPermissionType : DocumentableStringEnum, StringEnumSet {
+    /// Used to request permission to gather weather report.
+    static let weather: PermissionType = .Standard.weather.permissionType
 }
 
 /// A Codable struct that can be used to store messaging information specific to the use-case specific to
 /// the associated activity, task, or step.
-public final class StandardPermission : Permission, Codable {
+public final class StandardPermission : PermissionInfo, Codable {
     private enum CodingKeys : String, CodingKey, CaseIterable {
-        case permissionType, title, reason, _restrictedMessage = "restrictedMessage", _deniedMessage = "deniedMessage", _requestIfNeeded = "requestIfNeeded", _isOptional = "optional"
+        case permissionType, _restrictedMessage = "restrictedMessage", _deniedMessage = "deniedMessage", _isOptional = "optional", _requestIfNeeded = "requestIfNeeded"
     }
     
     public static let camera = StandardPermission(permissionType: .camera)
     public static let microphone = StandardPermission(permissionType: .microphone)
     public static let motion = StandardPermission(permissionType: .motion)
     public static let photoLibrary = StandardPermission(permissionType: .photoLibrary)
+    public static let weather = StandardPermission(permissionType: .weather)
     public static let location = StandardPermission(permissionType: .location)
     public static let locationWhenInUse = StandardPermission(permissionType: .locationWhenInUse)
     public static let notifications = StandardPermission(permissionType: .notifications)
     
     /// Default initializer.
-    public init(permissionType : StandardPermissionType, title: String? = nil, reason: String? = nil, deniedMessage: String? = nil, restrictedMessage: String? = nil, requestIfNeeded: Bool? = nil, isOptional: Bool? = nil) {
+    public init(permissionType : PermissionType, deniedMessage: String? = nil, restrictedMessage: String? = nil, requestIfNeeded: Bool? = nil, isOptional: Bool? = nil) {
         self.permissionType = permissionType
-        self.title = title
-        self.reason = reason
         self._deniedMessage = deniedMessage
         self._restrictedMessage = restrictedMessage
-        self._requestIfNeeded = requestIfNeeded
         self._isOptional = isOptional
+        self._requestIfNeeded = requestIfNeeded
     }
     
     /// The permission type for this permission.
-    public let permissionType : StandardPermissionType
-    
-    public var identifier: String {
-        return permissionType.identifier
-    }
-    
-    /// A title for this permission.
-    public let title: String?
-    
-    /// Additional reason for requiring the permission.
-    public let reason: String?
-    
-    /// Should the step request the listed permissions before continuing to the next step? (Default == `true`)
-    ///
-    /// This flag can be used to optionally show an instruction step that will display information to a user
-    /// concerning why a permission is being requested. This is allowed to add additional clarity to the user
-    /// about the requirements of a given task that cannot be explained satisfactorily by the OS alert.
-    public var requestIfNeeded: Bool {
-        return _requestIfNeeded ?? true
-    }
-    private let _requestIfNeeded: Bool?
+    public let permissionType: PermissionType
     
     /// Is the permission optional for a given task? (Default == `false`, ie. required)
     ///
@@ -146,19 +114,29 @@ public final class StandardPermission : Permission, Codable {
     /// information about the participant without them. In this case, the permission is optional and the
     /// participant should be allowed to continue without permission to access the motion sensors.
     ///
-    public var isOptional: Bool {
+    public var optional: Bool {
         return _isOptional ?? false
     }
     private let _isOptional: Bool?
     
+    /// Should the step request the listed permissions before continuing to the next step? (Default == `true`)
+    ///
+    /// This flag can be used to optionally show an instruction step that will display information to a user
+    /// concerning why a permission is being requested. This is allowed to add additional clarity to the user
+    /// about the requirements of a given task that cannot be explained satisfactorily by the OS alert.
+    public var requestIfNeeded: Bool {
+        return _requestIfNeeded ?? true
+    }
+    private let _requestIfNeeded: Bool?
+    
     /// The message to show when displaying an alert that the user cannot run a step or task because their
     /// access is restricted.
-    public var restrictedMessage: String {
+    public var restrictedMessage: String? {
         if let message = _restrictedMessage { return message }
         switch self.permissionType {
         case .camera:
             return Localization.localizedString("CAMERA_PERMISSION_RESTRICTED")
-        case .location, .locationWhenInUse:
+        case .location, .locationWhenInUse, .weather:
             return Localization.localizedString("LOCATION_PERMISSION_RESTRICTED")
         case .microphone:
             return Localization.localizedString("MICROPHONE_PERMISSION_RESTRICTED")
@@ -176,14 +154,14 @@ public final class StandardPermission : Permission, Codable {
     
     /// The message to show when displaying an alert that the user cannot run a step or task because their
     /// access is denied.
-    public var deniedMessage: String {
+    public var deniedMessage: String? {
         if let message = _deniedMessage { return message }
         switch self.permissionType {
         case .camera:
             return Localization.localizedString("CAMERA_PERMISSION_DENIED")
         case .location:
             return Localization.localizedString("LOCATION_BACKGROUND_PERMISSION_DENIED")
-        case .locationWhenInUse:
+        case .locationWhenInUse, .weather:
             return Localization.localizedString("LOCATION_IN_USE_PERMISSION_DENIED")
         case .microphone:
             return Localization.localizedString("MICROPHONE_PERMISSION_DENIED")
@@ -193,12 +171,22 @@ public final class StandardPermission : Permission, Codable {
             return Localization.localizedString("PHOTO_LIBRARY_PERMISSION_DENIED")
         case .notifications:
             return Localization.localizedString("NOTIFICATIONS_PERMISSION_DENIED")
+        default:
+            assertionFailure("\(self.permissionType) is unknown and does not have a denied message. Please fix.")
+            return nil
         }
     }
     private let _deniedMessage: String?
     
-    /// Returns the message appropriate to the status.
-    public func message(for status: PermissionAuthorizationStatus) -> String? {
+    private class Localization {
+        static func localizedString(_ key: String) -> String {
+            NSLocalizedString(key, tableName: nil, bundle: Bundle.module, value: key, comment: key)
+        }
+    }
+}
+
+extension PermissionInfo {
+    func message(for status: PermissionAuthorizationStatus) -> String? {
         switch status {
         case .denied, .previouslyDenied:
             return self.deniedMessage
@@ -208,12 +196,6 @@ public final class StandardPermission : Permission, Codable {
             return nil
         }
     }
-    
-    private class Localization {
-        static func localizedString(_ key: String) -> String {
-            NSLocalizedString(key, tableName: nil, bundle: Bundle.module, value: key, comment: key)
-        }
-    }
 }
 
 /// `PermissionError` errors are thrown when a activity does not have a permission that is required
@@ -221,7 +203,7 @@ public final class StandardPermission : Permission, Codable {
 public enum PermissionError : Error {
     
     /// Permission denied.
-    case notAuthorized(Permission, PermissionAuthorizationStatus)
+    case notAuthorized(PermissionInfo, PermissionAuthorizationStatus)
     
     /// Permission was not handled by this framework.
     case notHandled(String)
@@ -273,10 +255,10 @@ extension StandardPermission : DocumentableStruct {
         }
         switch key {
         case .permissionType:
-            return .init(propertyType: .reference(StandardPermissionType.documentableType()))
-        case .title,.reason,._restrictedMessage,._deniedMessage:
+            return .init(propertyType: .reference(PermissionType.documentableType()))
+        case ._restrictedMessage,._deniedMessage:
             return .init(propertyType: .primitive(.string))
-        case ._requestIfNeeded, ._isOptional:
+        case ._isOptional, ._requestIfNeeded:
             return .init(propertyType: .primitive(.boolean))
         }
     }
@@ -284,11 +266,8 @@ extension StandardPermission : DocumentableStruct {
     public static func examples() -> [StandardPermission] {
         let exampleA = StandardPermission(permissionType: .motion)
         let exampleB = StandardPermission(permissionType: .camera,
-                                          title: "Permission to use the camera",
-                                          reason: "Because we want to take a picture.",
                                           deniedMessage: "You didn't give permission",
                                           restrictedMessage: "Your camera access is restricted",
-                                          requestIfNeeded: false,
                                           isOptional: true)
         return [exampleA, exampleB]
     }

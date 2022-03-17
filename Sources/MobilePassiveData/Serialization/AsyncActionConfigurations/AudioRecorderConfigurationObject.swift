@@ -34,6 +34,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// The default configuration to use for a `AudioRecorder`.
 ///
@@ -51,7 +52,7 @@ import JsonModel
 ///            }
 ///            """.data(using: .utf8)! // our data in native (JSON) format
 /// ```
-public struct AudioRecorderConfigurationObject : RecorderConfiguration, Codable {
+public struct AudioRecorderConfigurationObject : AudioRecorderConfiguration, Codable {
     private enum CodingKeys : String, OrderedEnumCodingKey {
         case identifier, asyncActionType = "type", startStepIdentifier, stopStepIdentifier, _requiresBackgroundAudio = "requiresBackgroundAudio", saveAudioFile = "saveAudioFile"
     }
@@ -104,20 +105,6 @@ public struct AudioRecorderConfigurationObject : RecorderConfiguration, Codable 
         self.stopStepIdentifier = stopStepIdentifier
         self._requiresBackgroundAudio = requiresBackgroundAudio
         self.saveAudioFile = saveAudioFile
-    }
-    
-    /// Returns `location` and `motion` on iOS. Returns an empty set on platforms that do not
-    /// support distance recording.
-    public var permissionTypes: [PermissionType] {
-        #if os(iOS)
-            return [StandardPermissionType.microphone]
-        #else
-            return []
-        #endif
-    }
-    
-    /// Do nothing. No validation is required for this recorder.
-    public func validate() throws {
     }
 }
 

@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/Sage-Bionetworks/AssessmentModelKMM.git",
         "state": {
           "branch": null,
-          "revision": "1437760623f6a1c4c5c57b1bfea12aa963fa7b82",
-          "version": "0.5.4"
+          "revision": "1ab650cf86d5f15af8d179827c8830b0de985f45",
+          "version": "0.5.5"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/Sage-Bionetworks/JsonModel-Swift.git",
         "state": {
           "branch": null,
-          "revision": "b4f068b1e85564aa00ead449009ace5d31cc8b2a",
-          "version": "1.4.1"
+          "revision": "b6eca57507288ffc0aa755bda96386e888cf80e5",
+          "version": "1.4.5"
         }
       }
     ]

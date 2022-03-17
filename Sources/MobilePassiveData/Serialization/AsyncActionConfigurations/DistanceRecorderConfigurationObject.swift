@@ -32,6 +32,7 @@
 
 import Foundation
 import JsonModel
+import AssessmentModel
 
 /// The default configuration to use for a `RSDDistanceRecorder`.
 ///
@@ -88,11 +89,6 @@ public struct DistanceRecorderConfigurationObject : DistanceRecorderConfiguratio
         self.motionStepIdentifier = motionStepIdentifier
         self.startStepIdentifier = startStepIdentifier
         self.stopStepIdentifier = stopStepIdentifier
-    }
-    
-    
-    /// Do nothing. No validation is required for this recorder.
-    public func validate() throws {
     }
 }
 

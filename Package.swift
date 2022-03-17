@@ -52,12 +52,9 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(name: "JsonModel",
-                 url: "https://github.com/Sage-Bionetworks/JsonModel-Swift.git",
-                 from: "2.0.0"),
         .package(name: "AssessmentModel",
                  url: "https://github.com/Sage-Bionetworks/AssessmentModelKMM.git",
-                 from: "0.5.2"),
+                 from: "0.5.4"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -66,7 +63,6 @@ let package = Package(
         /// Main library.
         .target(name: "MobilePassiveData",
                 dependencies: [
-                    "JsonModel",
                     "ExceptionHandler",
                     .product(name: "AssessmentModel", package: "AssessmentModel"),
                 ],
@@ -94,7 +90,6 @@ let package = Package(
         // adding any privacy keys for using the microphone to the app `Info.Plist`.
         .target(name: "AudioRecorder",
                 dependencies: [
-                    "JsonModel",
                     "MobilePassiveData",
                 ]),
         .testTarget(
@@ -112,7 +107,6 @@ let package = Package(
         // any privacy keys for using motion sensors to the app `Info.Plist`.
         .target(name: "MotionSensor",
                 dependencies: [
-                    "JsonModel",
                     "MobilePassiveData",
                 ]),
         .testTarget(
@@ -139,7 +133,6 @@ let package = Package(
         // app `Info.Plist`.
         .target(name: "WeatherRecorder",
                 dependencies: [
-                    "JsonModel",
                     "MobilePassiveData",
                     "LocationAuthorization",
                 ]),
@@ -156,7 +149,6 @@ let package = Package(
         // motion sensors to the app `Info.Plist`.
         .target(name: "DistanceRecorder",
                 dependencies: [
-                    "JsonModel",
                     "MobilePassiveData",
                     "MotionSensor",
                     "LocationAuthorization",

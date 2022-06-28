@@ -67,10 +67,10 @@ public let motionRecordSchema = DocumentableRootArray(rootDocumentType: MotionRe
 public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
 
     /// System clock time.
-    public let uptime: TimeInterval?
+    public let uptime: ClockUptime?
 
     /// Time that the system has been awake since last reboot.
-    public let timestamp: TimeInterval?
+    public let timestamp: SecondDuration?
 
     /// An identifier marking the current step.
     public let stepPath: String
@@ -110,7 +110,7 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
         case uptime, timestamp, stepPath, timestampDate, sensorType, eventAccuracy, referenceCoordinate, heading, x, y, z, w
     }
 
-    fileprivate init(uptime: TimeInterval?, timestamp: TimeInterval?, stepPath: String, timestampDate: Date?, sensorType: MotionRecorderType?, eventAccuracy: Int?, referenceCoordinate: AttitudeReferenceFrame?, heading: Double?, x: Double?, y: Double?, z: Double?, w: Double?) {
+    fileprivate init(uptime: ClockUptime?, timestamp: SecondDuration?, stepPath: String, timestampDate: Date?, sensorType: MotionRecorderType?, eventAccuracy: Int?, referenceCoordinate: AttitudeReferenceFrame?, heading: Double?, x: Double?, y: Double?, z: Double?, w: Double?) {
         self.uptime = uptime
         self.timestamp = timestamp
         self.stepPath = stepPath

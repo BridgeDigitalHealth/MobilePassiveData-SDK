@@ -248,7 +248,7 @@ public class AudioRecorder : SampleRecorder, AVAudioRecorderDelegate {
         meterTimer = timer
     }
     
-    func recordMeterLevels(average: Float, peak: Float, uptime: TimeInterval) {
+    func recordMeterLevels(average: Float, peak: Float, uptime: ClockUptime) {
         let sample = AudioLevelRecord(uptime: uptime,
                                       timestamp: self.clock.runningDuration(for: uptime),
                                       stepPath: self.currentStepPath,

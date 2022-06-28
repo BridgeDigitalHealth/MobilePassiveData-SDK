@@ -44,10 +44,10 @@ public struct AudioLevelRecord : SampleRecord, Codable {
     }
 
     /// System clock time.
-    public let uptime: TimeInterval?
+    public let uptime: ClockUptime?
 
     /// Time that the system has been awake since last reboot.
-    public let timestamp: TimeInterval?
+    public let timestamp: SecondDuration?
 
     /// An identifier marking the current step.
     public let stepPath: String
@@ -67,8 +67,8 @@ public struct AudioLevelRecord : SampleRecord, Codable {
     /// The unit of measurement for the decibel levels.
     public let unit: String?
     
-    public init(uptime: TimeInterval?,
-                timestamp: TimeInterval?,
+    public init(uptime: ClockUptime?,
+                timestamp: SecondDuration?,
                 stepPath: String,
                 timestampDate: Date? = nil,
                 timeInterval: TimeInterval?,

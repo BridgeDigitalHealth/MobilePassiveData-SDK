@@ -36,6 +36,15 @@ import Foundation
 import UIKit
 #endif
 
+/// A marker for the time (in seconds) that the processor has been awake. This is equivalent to the value returned by `ProcessInfo.processInfo.systemUptime`.
+public typealias SystemUptime = Double
+
+/// A marker for the monotonic clock time (in seconds).
+public typealias ClockUptime = Double
+
+/// A duration of time in seconds.
+public typealias SecondDuration = Double
+
 /// The purpose of this class is to allow using a normalized "uptime" for processes that may need
 /// to track the time while the device is asleep. This clock "stopwatch" will keep running even
 /// when the device has gone to sleep.
@@ -54,16 +63,16 @@ public class SystemClock {
         #endif
     }
     
-    private var timeMarkers: [(clock: TimeInterval, system: TimeInterval)]
+    private var timeMarkers: [(clock: ClockUptime, system: SystemUptime)]
     
     /// The absolute start uptime for when this clock was instantiated. This uses the clock time rather than
     /// the system uptime that is used for tasks that will only fire when the device is awake.
-    public var startUptime: TimeInterval {
+    public var startUptime: ClockUptime {
         return timeMarkers[0].clock
     }
     
     /// The system uptime for when the clock was instantiated.
-    public var startSystemUptime: TimeInterval {
+    public var startSystemUptime: SystemUptime {
         return timeMarkers[0].system
     }
     
@@ -71,10 +80,10 @@ public class SystemClock {
     public let startDate: Date
     
     /// This will be non-nil if the clock has been paused.
-    private var pauseStartTime: TimeInterval?
+    private var pauseStartTime: ClockUptime?
     
     /// The amount of time that the clock has been paused.
-    private var pauseCumulation: TimeInterval = 0
+    public private(set) var pauseCumulation: SecondDuration = 0
     
     /// Is the clock paused?
     public var isPaused: Bool {
@@ -82,39 +91,40 @@ public class SystemClock {
     }
     
     /// The time interval for how long the step has been running.
-    public func runningDuration(for uptime: TimeInterval = SystemClock.uptime()) -> TimeInterval {
+    public func runningDuration(for uptime: ClockUptime = SystemClock.uptime()) -> SecondDuration {
         return uptime - startUptime - pauseCumulation
     }
     
     /// Pause the clock.
     public func pause() {
         guard pauseStartTime == nil else { return }
-        let uptime: TimeInterval = SystemClock.uptime()
+        let uptime: ClockUptime = SystemClock.uptime()
         pauseStartTime = uptime
     }
     
     /// Resume the clock.
     public func resume() {
         guard let pauseTime = pauseStartTime else { return }
-        let uptime: TimeInterval = SystemClock.uptime()
+        let uptime: ClockUptime = SystemClock.uptime()
         pauseCumulation += (uptime - pauseTime)
         pauseStartTime = nil
     }
     
     /// Get the clock uptime for a system awake time.
-    public func relativeUptime(to systemUptime: TimeInterval) -> TimeInterval {
+    public func relativeUptime(to systemUptime: SystemUptime) -> ClockUptime {
         let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
         return marker.clock + (systemUptime - marker.system)
     }
     
-    /// Get the clock uptime for a system awake time.
-    public func zeroRelativeTime(to systemUptime: TimeInterval) -> TimeInterval {
+    /// Get the duration (in seconds) between the given `ProcessInfo.processInfo.systemUptime` and when
+    /// the clock was started.
+    public func zeroRelativeTime(to systemUptime: SystemUptime) -> SecondDuration {
         let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
         return (systemUptime - marker.system) + (marker.clock - timeMarkers[0].clock)
     }
     
     /// Clock time.
-    public static func uptime() -> TimeInterval {
+    public static func uptime() -> ClockUptime {
         var uptime = timespec()
         guard 0 == clock_gettime(CLOCK_MONOTONIC_RAW, &uptime) else {
             print("ERROR: Could not execute clock_gettime, errno: \(errno)")
@@ -129,12 +139,12 @@ public class SystemClock {
     // allow for shared logic for tracking relative times across different view controllers and recorders
     // and is not intended to be used as a Codable model object.
     
-    internal init(clock: TimeInterval, system: TimeInterval, date: Date) {
+    internal init(clock: ClockUptime, system: SystemUptime, date: Date) {
         self.timeMarkers = [(clock, system)]
         self.startDate = date
     }
     
-    internal func addTimeMarkers(_ clock: TimeInterval, _ system: TimeInterval) {
+    internal func addTimeMarkers(_ clock: ClockUptime, _ system: SystemUptime) {
         self.timeMarkers.append((clock, system))
     }
 }

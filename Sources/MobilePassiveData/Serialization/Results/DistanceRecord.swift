@@ -65,10 +65,10 @@ public let distanceRecordSchema = DocumentableRootArray(rootDocumentType: Distan
 public struct DistanceRecord: SampleRecord, DelimiterSeparatedEncodable {
     
     /// The absolute clock time.
-    public let uptime: TimeInterval?
+    public let uptime: ClockUptime?
     
     /// Relative time to when the recorder was started.
-    public let timestamp: TimeInterval?
+    public let timestamp: SecondDuration?
     
     /// An identifier marking the current step.
     public let stepPath: String
@@ -121,7 +121,7 @@ public struct DistanceRecord: SampleRecord, DelimiterSeparatedEncodable {
         case uptime, timestamp, stepPath, timestampDate, timestampUnix, horizontalAccuracy, relativeDistance, latitude, longitude, verticalAccuracy, altitude, totalDistance, course, bearingRadians, speed, floor
     }
     
-    fileprivate init(uptime: TimeInterval?, timestamp: TimeInterval?, stepPath: String, timestampDate: Date?, timestampUnix: TimeInterval?, horizontalAccuracy: Double?, relativeDistance: Double?, latitude: Double?, longitude: Double?, verticalAccuracy: Double?, altitude: Double?, totalDistance: Double?, course: Double?, bearingRadians: Double?, speed: Double?, floor: Int?) {
+    fileprivate init(uptime: ClockUptime?, timestamp: SecondDuration?, stepPath: String, timestampDate: Date?, timestampUnix: TimeInterval?, horizontalAccuracy: Double?, relativeDistance: Double?, latitude: Double?, longitude: Double?, verticalAccuracy: Double?, altitude: Double?, totalDistance: Double?, course: Double?, bearingRadians: Double?, speed: Double?, floor: Int?) {
         self.uptime = uptime
         self.timestamp = timestamp
         self.stepPath = stepPath
@@ -149,7 +149,7 @@ public struct DistanceRecord: SampleRecord, DelimiterSeparatedEncodable {
     ///     - previousLocation: The previous `CLLocation` or null if this is the first sample.
     ///     - totalDistance: Sum of the relative distance measurements.
     ///     - relativeDistanceOnly: Whether or not **only** relative distance should be recorded. Default = `true`
-    public init(uptime: TimeInterval?, timestamp: TimeInterval?, stepPath: String, location: CLLocation, previousLocation: CLLocation?, totalDistance: Double?, relativeDistanceOnly: Bool = true) {
+    public init(uptime: ClockUptime?, timestamp: SecondDuration?, stepPath: String, location: CLLocation, previousLocation: CLLocation?, totalDistance: Double?, relativeDistanceOnly: Bool = true) {
         self.uptime = uptime
         self.timestamp = timestamp
         self.stepPath = stepPath

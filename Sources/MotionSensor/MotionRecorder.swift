@@ -29,13 +29,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-    
-#if os(iOS)
 
-import UIKit
-import CoreMotion
+import Foundation
 import MobilePassiveData
-import AVFoundation
 import JsonModel
 
 extension Notification.Name {
@@ -44,6 +40,12 @@ extension Notification.Name {
     /// nil for the operation queue so it gets handled synchronously on the calling queue.
     public static let MotionRecorderWillStart = Notification.Name(rawValue: "MotionRecorderWillStart")
 }
+    
+#if os(iOS)
+
+import UIKit
+import CoreMotion
+import AVFoundation
 
 /// `MotionRecorder` is a subclass of `RSDSampleRecorder` that implements recording core motion
 /// sensor data.
@@ -56,8 +58,7 @@ extension Notification.Name {
 ///         platforms.
 ///
 /// - seealso: `MotionRecorderType`, `MotionRecorderConfiguration`, and `MotionRecord`.
-@available(iOS 10.0, *)
-public class MotionRecorder : SampleRecorder {
+open class MotionRecorder : SampleRecorder {
     
     let audioSessionIdentifier = "org.sagebase.MotionRecorder.\(UUID())"
     
@@ -238,8 +239,16 @@ public class MotionRecorder : SampleRecorder {
     }
 
     func recordRawSample(_ data: MotionVectorData) {
-        let sample = MotionRecord(stepPath: currentStepPath, data: data, referenceClock: self.clock)
-        self.writeSample(sample)
+        guard !self.isPaused, !clock.isPaused else { return }
+        Task {
+            let stepPath = await stepPath(for: data.timestamp)
+            let sample = sample(from: data, stepPath: stepPath)
+            self.writeSample(sample)
+        }
+    }
+    
+    open func sample(from data: MotionVectorData, stepPath: String) -> SampleRecord {
+        MotionRecord(stepPath: stepPath, data: data, referenceClock: clock)
     }
 
     func startDeviceMotion(with motionManager: CMMotionManager, updateInterval: TimeInterval, completion: ((Error?) -> Void)?) {
@@ -256,13 +265,21 @@ public class MotionRecorder : SampleRecorder {
             completion?(error)
         }
     }
-
+    
     func recordDeviceMotionSample(_ data: CMDeviceMotion) {
+        guard !self.isPaused, !clock.isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
-        let samples = recorderTypes.compactMap {
-            MotionRecord(stepPath: currentStepPath, data: data, referenceFrame: frame, sensorType: $0, referenceClock: self.clock)
+        Task {
+            let stepPath = await stepPath(for: data.timestamp)
+            let samples = samples(from: data, frame: frame, stepPath: stepPath)
+            self.writeSamples(samples)
         }
-        self.writeSamples(samples)
+    }
+    
+    open func samples(from data: CMDeviceMotion, frame: CMAttitudeReferenceFrame, stepPath: String) -> [SampleRecord] {
+        recorderTypes.compactMap {
+            MotionRecord(stepPath: stepPath, data: data, referenceFrame: frame, sensorType: $0, referenceClock: self.clock)
+        }
     }
 
     /// Override to stop updating the motion sensors.
@@ -319,17 +336,22 @@ public class MotionRecorder : SampleRecorder {
     func setupInterruptionObserver() {
 
         // If the task should cancel if interrupted by a phone call, then set up a listener.
-        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: OperationQueue.main, using: { [weak self] (notification) in
+        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main, using: { [weak self] (notification) in
             guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                let type = AVAudioSession.InterruptionType(rawValue: rawValue), type == .began
+                  let type = AVAudioSession.InterruptionType(rawValue: rawValue),
+                  let self = self
                 else {
                     return
             }
-
-            // The motion sensor recorder is not currently designed to handle phone calls and resume. Until
-            // there is a use-case for prioritizing pause/resume of this recorder (not currently implemented),
-            // just stop the recorder. syoung 05/21/2019
-            self?.didFail(with: SampleRecorder.RecorderError.interrupted)
+            
+            Task {
+                if type == .began {
+                    await self.pause()
+                }
+                else {
+                    await self.resume()
+                }
+            }
         })
     }
 
@@ -339,6 +361,11 @@ public class MotionRecorder : SampleRecorder {
             _audioInterruptObserver = nil
         }
     }
+}
+
+#else
+
+open class MotionRecorder : SampleRecorder {
 }
 
 #endif

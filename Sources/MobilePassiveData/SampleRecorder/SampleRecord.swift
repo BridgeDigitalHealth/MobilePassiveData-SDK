@@ -67,7 +67,7 @@ public protocol SampleRecord : Codable {
     /// accepts a phone call while the recorder is running.
     ///
     /// -seealso: `ProcessInfo.processInfo.systemUptime`
-    var timestamp: TimeInterval? { get }
+    var timestamp: SecondDuration? { get }
 }
 
 extension SampleRecord {

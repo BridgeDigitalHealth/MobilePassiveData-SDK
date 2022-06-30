@@ -32,6 +32,7 @@
 
 
 import Foundation
+import Combine
 import JsonModel
 
 
@@ -106,7 +107,10 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     ///         of the controller. For example, if a controller is both processing motion and
     ///         camera sensors and only the motion sensors failed but using them is a secondary
     ///         action.
-    @Published public var error: Error?
+    public var error: Error?
+    
+    /// Publisher for sending an error.
+    public let errorNotification = PassthroughSubject<Error, Never>()
     
     /// A list of the record markers denoting each step change.
     @MainActor public private(set) var markers: [(uptime: ClockUptime, stepPath: String)] = []
@@ -413,6 +417,9 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     open func didFail(with error: Error) {
         guard self.status <= .running else { return }
         _syncUpdateStatus(.failed, error: error)
+        if self.status == .running {
+            self.errorNotification.send(error)
+        }
         DispatchQueue.main.async {
             self.delegate?.asyncAction(self, didFailWith: error)
         }

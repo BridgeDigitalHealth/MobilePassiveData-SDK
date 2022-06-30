@@ -301,8 +301,8 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
 
     /// Cancel the action. The default implementation will set the `isCancelled` flag to `true` and
     /// then call `stop()` with a nil completion handler.
-    @MainActor open func cancel() {
-        status = .cancelled
+    open func cancel() {
+        _syncUpdateStatus(.cancelled)
         Task(priority: .high) {
             try? await stop()
         }
@@ -311,11 +311,15 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     /// Let the controller know that the task has moved to the given step. This method is called by
     /// the task controller when the task transitions to a new step. This method will update the
     /// `currentStepPath` and add a marker to each logging file.
-    @MainActor public final func moveTo(stepPath: String) {
-        self.currentStepPath = stepPath
-        let uptime = _writeMarkers()
-        markers.append((uptime, stepPath))
-        self.didMoveTo(stepPath: stepPath)
+    public final func moveTo(stepPath: String) {
+        Task {
+            await MainActor.run {
+                currentStepPath = stepPath
+                let uptime = _writeMarkers()
+                markers.append((uptime, stepPath))
+                didMoveTo(stepPath: stepPath)
+            }
+        }
     }
     
     open func didMoveTo(stepPath: String) {

@@ -113,7 +113,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     public let errorNotification = PassthroughSubject<Error, Never>()
     
     /// A list of the record markers denoting each step change.
-    @MainActor public private(set) var markers: [(uptime: ClockUptime, stepPath: String)] = []
+    @MainActor private var markers: [(uptime: ClockUptime, stepPath: String)] = []
 
     /// Results for this recorder.
     ///

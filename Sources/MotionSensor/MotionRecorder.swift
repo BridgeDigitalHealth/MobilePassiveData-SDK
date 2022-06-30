@@ -162,6 +162,9 @@ open class MotionRecorder : SampleRecorder {
             if strongSelf.motionConfiguration?.requiresBackgroundAudio ?? false {
                 AudioSessionController.shared.startBackgroundAudioIfNeeded(on: strongSelf.audioSessionIdentifier)
             }
+            else {
+                strongSelf.setupAppPausedObservers()
+            }
         }
     }
 
@@ -297,6 +300,7 @@ open class MotionRecorder : SampleRecorder {
             AudioSessionController.shared.stopAudioSession(on: self.audioSessionIdentifier)
 
             self.stopInterruptionObserver()
+            self.stopAppPausedObservers()
 
             // Stop the updates synchronously
             if let motionManager = self.motionManager {
@@ -349,7 +353,7 @@ open class MotionRecorder : SampleRecorder {
             if type == .began {
                 self.pause()
             }
-            else {
+            else if type == .ended {
                 self.resume()
             }
         })
@@ -360,6 +364,31 @@ open class MotionRecorder : SampleRecorder {
             NotificationCenter.default.removeObserver(observer)
             _audioInterruptObserver = nil
         }
+    }
+    
+    // MARK: App backgrounded
+    
+    private var _backgroundObserver: Any?
+    private var _activeObserver: Any?
+
+    func setupAppPausedObservers() {
+        _backgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.pause()
+        }
+        _activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.resume()
+        }
+    }
+    
+    func stopAppPausedObservers() {
+        if let observer = _backgroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = _activeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        _backgroundObserver = nil
+        _activeObserver = nil
     }
 }
 

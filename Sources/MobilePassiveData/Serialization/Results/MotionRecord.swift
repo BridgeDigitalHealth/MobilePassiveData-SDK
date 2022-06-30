@@ -130,11 +130,10 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     ///     - startUptime: System clock uptime when the recorder was started.
     ///     - stepPath: The current step path.
     ///     - data: The raw sensor data to record.
-    public init(stepPath: String, data: MotionVectorData, referenceClock: SystemClock? = nil) {
-
-        self.uptime = referenceClock?.relativeUptime(to: data.timestamp)
-        self.timestamp = referenceClock?.zeroRelativeTime(to: data.timestamp) ?? data.timestamp
+    public init(stepPath: String, data: MotionVectorData, uptime: ClockUptime, timestamp: SecondDuration) {
         self.stepPath = stepPath
+        self.uptime = uptime
+        self.timestamp = timestamp
         self.timestampDate = nil
         self.heading = nil
         self.eventAccuracy = nil
@@ -156,7 +155,7 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     ///     - data: The `CMDeviceMotion` data sample from which to record information.
     ///     - referenceFrame: The `CMAttitudeReferenceFrame` for this recording.
     ///     - sensorType: The recorder type for which to record the vector.
-    public init?(stepPath: String, data: CMDeviceMotion, referenceFrame: CMAttitudeReferenceFrame, sensorType: MotionRecorderType, referenceClock: SystemClock? = nil) {
+    public init?(stepPath: String, data: CMDeviceMotion, referenceFrame: CMAttitudeReferenceFrame, sensorType: MotionRecorderType, uptime: ClockUptime, timestamp: SecondDuration) {
 
         var eventAccuracy: Int?
         var referenceCoordinate: AttitudeReferenceFrame?
@@ -194,8 +193,8 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
             return nil
         }
 
-        self.uptime = referenceClock?.relativeUptime(to: data.timestamp)
-        self.timestamp = referenceClock?.zeroRelativeTime(to: data.timestamp) ?? data.timestamp
+        self.uptime = uptime
+        self.timestamp = timestamp
         self.stepPath = stepPath
         self.timestampDate = nil
         self.sensorType = sensorType

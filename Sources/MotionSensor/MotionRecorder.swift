@@ -239,16 +239,18 @@ open class MotionRecorder : SampleRecorder {
     }
 
     func recordRawSample(_ data: MotionVectorData) {
-        guard !self.isPaused, !clock.isPaused else { return }
+        guard !clock.isPaused else { return }
         Task {
-            let stepPath = await stepPath(for: data.timestamp)
-            let sample = sample(from: data, stepPath: stepPath)
+            async let uptime = clock.relativeUptime(to: data.timestamp)
+            async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
+            async let stepPath = stepPath(for: data.timestamp)
+            let sample = await sample(from: data, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
             self.writeSample(sample)
         }
     }
     
-    open func sample(from data: MotionVectorData, stepPath: String) -> SampleRecord {
-        MotionRecord(stepPath: stepPath, data: data, referenceClock: clock)
+    open func sample(from data: MotionVectorData, stepPath: String, uptime: ClockUptime, timestamp: SecondDuration) -> SampleRecord {
+        MotionRecord(stepPath: stepPath, data: data, uptime: uptime, timestamp: timestamp)
     }
 
     func startDeviceMotion(with motionManager: CMMotionManager, updateInterval: TimeInterval, completion: ((Error?) -> Void)?) {
@@ -270,15 +272,17 @@ open class MotionRecorder : SampleRecorder {
         guard !self.isPaused, !clock.isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
         Task {
-            let stepPath = await stepPath(for: data.timestamp)
-            let samples = samples(from: data, frame: frame, stepPath: stepPath)
+            async let uptime = clock.relativeUptime(to: data.timestamp)
+            async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
+            async let stepPath = stepPath(for: data.timestamp)
+            let samples = await samples(from: data, frame: frame, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
             self.writeSamples(samples)
         }
     }
     
-    open func samples(from data: CMDeviceMotion, frame: CMAttitudeReferenceFrame, stepPath: String) -> [SampleRecord] {
+    open func samples(from data: CMDeviceMotion, frame: CMAttitudeReferenceFrame, stepPath: String, uptime: ClockUptime, timestamp: SecondDuration) -> [SampleRecord] {
         recorderTypes.compactMap {
-            MotionRecord(stepPath: stepPath, data: data, referenceFrame: frame, sensorType: $0, referenceClock: self.clock)
+            MotionRecord(stepPath: stepPath, data: data, referenceFrame: frame, sensorType: $0, uptime: uptime, timestamp: timestamp)
         }
     }
 
@@ -334,8 +338,6 @@ open class MotionRecorder : SampleRecorder {
     private var _audioInterruptObserver: Any?
 
     func setupInterruptionObserver() {
-
-        // If the task should cancel if interrupted by a phone call, then set up a listener.
         _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main, using: { [weak self] (notification) in
             guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: rawValue),
@@ -344,13 +346,11 @@ open class MotionRecorder : SampleRecorder {
                     return
             }
             
-            Task {
-                if type == .began {
-                    await self.pause()
-                }
-                else {
-                    await self.resume()
-                }
+            if type == .began {
+                self.pause()
+            }
+            else {
+                self.resume()
             }
         })
     }

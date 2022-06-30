@@ -249,14 +249,17 @@ public class AudioRecorder : SampleRecorder, AVAudioRecorderDelegate {
     }
     
     func recordMeterLevels(average: Float, peak: Float, uptime: ClockUptime) {
-        let sample = AudioLevelRecord(uptime: uptime,
-                                      timestamp: self.clock.runningDuration(for: uptime),
-                                      stepPath: self.currentStepPath,
-                                      timeInterval: self.timeInterval,
-                                      average: convertLevel(average),
-                                      peak: convertLevel(peak),
-                                      unit: self.meterUnit)
-        self.writeSample(sample)
+        Task {
+            let timestamp = await clock.runningDuration(for: uptime)
+            let sample = AudioLevelRecord(uptime: uptime,
+                                          timestamp: timestamp,
+                                          stepPath: self.currentStepPath,
+                                          timeInterval: self.timeInterval,
+                                          average: convertLevel(average),
+                                          peak: convertLevel(peak),
+                                          unit: self.meterUnit)
+            self.writeSample(sample)
+        }
     }
     
     func convertLevel(_ level: Float) -> Float {

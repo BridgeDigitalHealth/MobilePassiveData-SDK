@@ -141,7 +141,9 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     open private(set) var collectionResult: CollectionResultObject
     
     /// Is the recorder currently paused?
-    @Published open private(set) var isPaused: Bool = false
+    public final var isPaused: Bool {
+        clock.isPaused
+    }
     
     /// Start the recorder.
     ///
@@ -199,7 +201,6 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
         }
 
         // Set paused to false and set the start uptime and timestamp
-        isPaused = false
         clock = SystemClock()
         _syncUpdateStatus(.starting)
         let stepPath = currentStepPath
@@ -224,15 +225,17 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     }
 
     /// Pause the action. The base class implementation marks the `isPaused` property as `true`.
-    @MainActor open func pause() {
-        isPaused = true
-        clock.pause()
+    open func pause() {
+        Task {
+            await clock.pause()
+        }
     }
 
     /// Resume the action. The base class implementation marks the `isPaused` property as `false`.
-    @MainActor open func resume() {
-        isPaused = false
-        clock.resume()
+    open func resume() {
+        Task {
+            await clock.resume()
+        }
     }
     
     /// Stop the action.
@@ -312,13 +315,17 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     /// the task controller when the task transitions to a new step. This method will update the
     /// `currentStepPath` and add a marker to each logging file.
     public final func moveTo(stepPath: String) {
+        let clockUptime = SystemClock.uptime()
+        let date = Date()
+        let systemUptime = ProcessInfo.processInfo.systemUptime
         Task {
             await MainActor.run {
                 currentStepPath = stepPath
-                let uptime = _writeMarkers()
-                markers.append((uptime, stepPath))
-                didMoveTo(stepPath: stepPath)
+                markers.append((clockUptime, stepPath))
             }
+            let timestamp = await clock.zeroRelativeTime(to: systemUptime)
+            _writeMarkers(stepPath: stepPath, uptime: clockUptime, timestamp: timestamp, date: date)
+            didMoveTo(stepPath: stepPath)
         }
     }
     
@@ -326,7 +333,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     }
     
     @MainActor public final func stepPath(for timestamp: SystemUptime) async -> String {
-        let uptime = clock.relativeUptime(to: timestamp)
+        let uptime = await clock.relativeUptime(to: timestamp)
         return markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
     }
     
@@ -427,9 +434,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
         DispatchQueue.main.async {
             self.delegate?.asyncAction(self, didFailWith: error)
         }
-        Task(priority: .high) {
-            await cancel()
-        }
+        cancel()
     }
 
     /// Append the `collectionResult` with the given result.
@@ -604,11 +609,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     }
 
     /// Write a marker to each logging file.
-    @MainActor private func _writeMarkers() -> ClockUptime {
-        let uptime = SystemClock.uptime()
-        let timestamp = clock.zeroRelativeTime(to: ProcessInfo.processInfo.systemUptime)
-        let date = Date()
-        let stepPath = self.currentStepPath
+    private func _writeMarkers(stepPath: String, uptime: ClockUptime, timestamp: SystemUptime, date: Date) {
         self.loggerQueue.async {
 
             // Only write to the file if the recorder status indicates that the logging file is open
@@ -630,7 +631,6 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
                 }
             }
         }
-        return uptime
     }
 
     /// Open log files. This method should be called on the `loggerQueue`.

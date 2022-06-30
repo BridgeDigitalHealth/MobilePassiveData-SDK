@@ -36,7 +36,7 @@ import XCTest
 import JsonModel
 
 struct TestRecord : SampleRecord, DelimiterSeparatedEncodable {
-    let uptime: TimeInterval
+    let uptime: ClockUptime
     let stepPath: String
     let label: String?
     let x: Double?
@@ -47,7 +47,7 @@ struct TestRecord : SampleRecord, DelimiterSeparatedEncodable {
         return nil
     }
     
-    var timestamp: TimeInterval? {
+    var timestamp: SecondDuration? {
         return nil
     }
     

@@ -32,6 +32,7 @@
 
 
 import Foundation
+import Combine
 import JsonModel
 
 
@@ -43,7 +44,7 @@ import JsonModel
 /// Using this base implementation allows for a consistent logging of shared sample data key words
 /// for the step path and the uptime. It implements the logic for writing to a file, tracking the
 /// uptime and start date, and provides a consistent implementation for error handling.
-open class SampleRecorder : NSObject, AsyncActionController {
+open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     
     /// Errors returned in the completion handler during `start()` when starting fails for timing reasons.
     public enum RecorderError : Error {
@@ -80,7 +81,7 @@ open class SampleRecorder : NSObject, AsyncActionController {
     }
     
     /// The current `stepPath` to record to log samples.
-    @objc dynamic public private(set) var currentStepPath: String
+    @Published public private(set) var currentStepPath: String
     
     /// The section identifier for this recorder. In practice, this identifier is used to
     /// differentiate between log files where a separate recording is made for each section of an
@@ -99,10 +100,7 @@ open class SampleRecorder : NSObject, AsyncActionController {
     public let configuration: AsyncActionConfiguration
         
     /// The status of the recorder.
-    ///
-    /// - note: This property is implemented as `@objc dynamic` so that step view controllers can
-    ///         use KVO to listen for changes.
-    @objc dynamic public private(set) var status: AsyncActionStatus = .idle
+    @Published public private(set) var status: AsyncActionStatus = .idle
     
     /// The last error on the action controller.
     /// - note: Under certain circumstances, getting an error will not result in a terminal failure
@@ -110,6 +108,12 @@ open class SampleRecorder : NSObject, AsyncActionController {
     ///         camera sensors and only the motion sensors failed but using them is a secondary
     ///         action.
     public var error: Error?
+    
+    /// Publisher for sending an error.
+    public let errorNotification = PassthroughSubject<Error, Never>()
+    
+    /// A list of the record markers denoting each step change.
+    @MainActor private var markers: [(uptime: ClockUptime, stepPath: String)] = []
 
     /// Results for this recorder.
     ///
@@ -137,10 +141,37 @@ open class SampleRecorder : NSObject, AsyncActionController {
     open private(set) var collectionResult: CollectionResultObject
     
     /// Is the recorder currently paused?
+    public final var isPaused: Bool {
+        clock.isPaused
+    }
+    
+    /// Start the recorder.
     ///
-    /// - note: This property is implemented as `@objc dynamic` so that step view controllers can
-    ///         use KVO to listen for changes.
-    @objc dynamic open private(set) var isPaused: Bool = false
+    /// This method is called by the task controller to start the recorder. This implementation
+    /// performs the following actions:
+    /// 1. Check to see if the recorder is already running or has been cancelled and will call the
+    ///     completion handler with an error if that is the case.
+    /// 2. Update the `startUptime` and `startDate` to the current time.
+    /// 3. Open a file for logging samples.
+    /// 4. If and only if the logging file was successfully opened, then call `startRecorder()`
+    ///     asynchronously on the main queue.
+    ///
+    /// - note: This is implemented as a `public final` class to block overriding this method.
+    ///         Instead, subclasses should implement logic required to start a recorder by
+    ///         overriding the `startRecorder()` method. This is done to ensure that the logging
+    ///         file was successfully created before attempting to record any data to that file.
+    @MainActor public final func start() async throws {
+        let _: Bool = try await withCheckedThrowingContinuation { continuation in
+            start { _, _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                }
+                else {
+                    continuation.resume(returning: true)
+                }
+            }
+        }
+    }
 
     /// Start the recorder with the given completion handler.
     ///
@@ -170,7 +201,6 @@ open class SampleRecorder : NSObject, AsyncActionController {
         }
 
         // Set paused to false and set the start uptime and timestamp
-        isPaused = false
         clock = SystemClock()
         _syncUpdateStatus(.starting)
         let stepPath = currentStepPath
@@ -196,14 +226,45 @@ open class SampleRecorder : NSObject, AsyncActionController {
 
     /// Pause the action. The base class implementation marks the `isPaused` property as `true`.
     open func pause() {
-        isPaused = true
-        clock.pause()
+        Task {
+            await clock.pause()
+        }
     }
 
     /// Resume the action. The base class implementation marks the `isPaused` property as `false`.
     open func resume() {
-        isPaused = false
-        clock.resume()
+        Task {
+            await clock.resume()
+        }
+    }
+    
+    /// Stop the action.
+    ///
+    /// This method is called by the task controller to stop the recorder. This implementation will
+    /// first close the logging file and then call `stopRecorder()` asynchronously on the main queue.
+    /// The `stopRecorder()` method is called whether or not there is an error when closing the
+    /// logging file so that subclasses can perform any required cleanup.
+    ///
+    /// - note: This is implemented as a `public final` class to block overriding this method.
+    ///         Instead, subclasses should implement logic required to stop a recorder by overriding
+    ///         the `stopRecorder()` method. This is done to ensure that the logging file is closed
+    ///         and the result is added to the result collection *before* handing over control to
+    ///         the subclass.
+    ///
+    @MainActor public final func stop() async throws -> ResultData {
+        try await withCheckedThrowingContinuation { continuation in
+            stop { _, resultData, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                }
+                else if let resultData = resultData {
+                    continuation.resume(returning: resultData)
+                }
+                else {
+                    continuation.resume(throwing: ValidationError.unexpectedNullObject("Both result and error are null."))
+                }
+            }
+        }
     }
 
     /// Stop the action with the given completion handler.
@@ -245,19 +306,53 @@ open class SampleRecorder : NSObject, AsyncActionController {
     /// then call `stop()` with a nil completion handler.
     open func cancel() {
         _syncUpdateStatus(.cancelled)
-        stop()
+        Task(priority: .high) {
+            try? await stop()
+        }
     }
 
     /// Let the controller know that the task has moved to the given step. This method is called by
     /// the task controller when the task transitions to a new step. This method will update the
     /// `currentStepPath` and add a marker to each logging file.
     public final func moveTo(stepPath: String) {
-        self.currentStepPath = stepPath
-        _writeMarkers()
-        self.didMoveTo(stepPath: stepPath)
+        let clockUptime = SystemClock.uptime()
+        let date = Date()
+        let systemUptime = ProcessInfo.processInfo.systemUptime
+        Task {
+            await MainActor.run {
+                currentStepPath = stepPath
+                markers.append((clockUptime, stepPath))
+            }
+            let timestamp = await clock.zeroRelativeTime(to: systemUptime)
+            _writeMarkers(stepPath: stepPath, uptime: clockUptime, timestamp: timestamp, date: date)
+            didMoveTo(stepPath: stepPath)
+        }
     }
     
     open func didMoveTo(stepPath: String) {
+    }
+    
+    @MainActor public final func stepPath(for timestamp: SystemUptime) async -> String {
+        let uptime = await clock.relativeUptime(to: timestamp)
+        return markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
+    }
+    
+    /// This method should be called on the main thread with the completion handler also called on
+    /// the main thread. The base class implementation will immediately call the completion handler.
+    @MainActor public final func requestPermissions() async throws -> ResultData {
+        try await withCheckedThrowingContinuation { continuation in
+            requestPermissions(on: self) { _, resultData, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                }
+                else if let resultData = resultData {
+                    continuation.resume(returning: resultData)
+                }
+                else {
+                    continuation.resume(throwing: ValidationError.unexpectedNullObject("Both result and error are null."))
+                }
+            }
+        }
     }
     
     /// This method should be called on the main thread with the completion handler also called on
@@ -313,11 +408,6 @@ open class SampleRecorder : NSObject, AsyncActionController {
         completion(.running, nil)
     }
 
-    /// Convenience method for stopping the recorder without a callback handler.
-    public final func stop() {
-        stop(nil)
-    }
-
     /// This method is called during finish after the logger is closed. The base class
     /// implementation will immediately call the completion handler. If an overriding class needs
     /// to do any actions to stop the recorder, then override this method. If the override calls
@@ -338,6 +428,9 @@ open class SampleRecorder : NSObject, AsyncActionController {
     open func didFail(with error: Error) {
         guard self.status <= .running else { return }
         _syncUpdateStatus(.failed, error: error)
+        if self.status == .running {
+            self.errorNotification.send(error)
+        }
         DispatchQueue.main.async {
             self.delegate?.asyncAction(self, didFailWith: error)
         }
@@ -441,7 +534,7 @@ open class SampleRecorder : NSObject, AsyncActionController {
     ///     - stepPath: The step path.
     ///     - loggerIdentifier: The identifier for the logger for which to create the marker.
     /// - returns: A sample to add to the log file that can be used as a step transition marker.
-    open func instantiateMarker(uptime: TimeInterval, timestamp: TimeInterval, date: Date, stepPath: String, loggerIdentifier: String) -> SampleRecord {
+    open func instantiateMarker(uptime: ClockUptime, timestamp: SecondDuration, date: Date, stepPath: String, loggerIdentifier: String) -> SampleRecord {
         RecordMarker(uptime: uptime, timestamp: timestamp, date: date, stepPath: stepPath)
     }
 
@@ -516,11 +609,7 @@ open class SampleRecorder : NSObject, AsyncActionController {
     }
 
     /// Write a marker to each logging file.
-    private func _writeMarkers() {
-        let uptime = SystemClock.uptime()
-        let timestamp = clock.zeroRelativeTime(to: ProcessInfo.processInfo.systemUptime)
-        let date = Date()
-        let stepPath = self.currentStepPath
+    private func _writeMarkers(stepPath: String, uptime: ClockUptime, timestamp: SystemUptime, date: Date) {
         self.loggerQueue.async {
 
             // Only write to the file if the recorder status indicates that the logging file is open

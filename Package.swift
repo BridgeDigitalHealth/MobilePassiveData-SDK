@@ -8,8 +8,8 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         // Add support for all platforms starting from a specific version.
-        .macOS(.v10_15),
-        .iOS(.v11),
+        .macOS(.v11),
+        .iOS(.v14),
         .watchOS(.v7),
         .tvOS(.v14)
     ],
@@ -54,7 +54,7 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
         .package(name: "JsonModel",
                  url: "https://github.com/Sage-Bionetworks/JsonModel-Swift.git",
-                 from: "1.3.5"),
+                 from: "1.5.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

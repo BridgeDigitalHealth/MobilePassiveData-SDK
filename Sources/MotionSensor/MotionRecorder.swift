@@ -29,13 +29,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-    
-#if os(iOS)
 
-import UIKit
-import CoreMotion
+import Foundation
 import MobilePassiveData
-import AVFoundation
 import JsonModel
 
 extension Notification.Name {
@@ -44,6 +40,12 @@ extension Notification.Name {
     /// nil for the operation queue so it gets handled synchronously on the calling queue.
     public static let MotionRecorderWillStart = Notification.Name(rawValue: "MotionRecorderWillStart")
 }
+    
+#if os(iOS)
+
+import UIKit
+import CoreMotion
+import AVFoundation
 
 /// `MotionRecorder` is a subclass of `RSDSampleRecorder` that implements recording core motion
 /// sensor data.
@@ -56,8 +58,7 @@ extension Notification.Name {
 ///         platforms.
 ///
 /// - seealso: `MotionRecorderType`, `MotionRecorderConfiguration`, and `MotionRecord`.
-@available(iOS 10.0, *)
-public class MotionRecorder : SampleRecorder {
+open class MotionRecorder : SampleRecorder {
     
     let audioSessionIdentifier = "org.sagebase.MotionRecorder.\(UUID())"
     
@@ -161,6 +162,9 @@ public class MotionRecorder : SampleRecorder {
             if strongSelf.motionConfiguration?.requiresBackgroundAudio ?? false {
                 AudioSessionController.shared.startBackgroundAudioIfNeeded(on: strongSelf.audioSessionIdentifier)
             }
+            else {
+                strongSelf.setupAppPausedObservers()
+            }
         }
     }
 
@@ -238,8 +242,18 @@ public class MotionRecorder : SampleRecorder {
     }
 
     func recordRawSample(_ data: MotionVectorData) {
-        let sample = MotionRecord(stepPath: currentStepPath, data: data, referenceClock: self.clock)
-        self.writeSample(sample)
+        guard !clock.isPaused else { return }
+        Task {
+            async let uptime = clock.relativeUptime(to: data.timestamp)
+            async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
+            async let stepPath = stepPath(for: data.timestamp)
+            let sample = await sample(from: data, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
+            self.writeSample(sample)
+        }
+    }
+    
+    open func sample(from data: MotionVectorData, stepPath: String, uptime: ClockUptime, timestamp: SecondDuration) -> SampleRecord {
+        MotionRecord(stepPath: stepPath, data: data, uptime: uptime, timestamp: timestamp)
     }
 
     func startDeviceMotion(with motionManager: CMMotionManager, updateInterval: TimeInterval, completion: ((Error?) -> Void)?) {
@@ -256,13 +270,23 @@ public class MotionRecorder : SampleRecorder {
             completion?(error)
         }
     }
-
+    
     func recordDeviceMotionSample(_ data: CMDeviceMotion) {
+        guard !self.isPaused, !clock.isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
-        let samples = recorderTypes.compactMap {
-            MotionRecord(stepPath: currentStepPath, data: data, referenceFrame: frame, sensorType: $0, referenceClock: self.clock)
+        Task {
+            async let uptime = clock.relativeUptime(to: data.timestamp)
+            async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
+            async let stepPath = stepPath(for: data.timestamp)
+            let samples = await samples(from: data, frame: frame, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
+            self.writeSamples(samples)
         }
-        self.writeSamples(samples)
+    }
+    
+    open func samples(from data: CMDeviceMotion, frame: CMAttitudeReferenceFrame, stepPath: String, uptime: ClockUptime, timestamp: SecondDuration) -> [SampleRecord] {
+        recorderTypes.compactMap {
+            MotionRecord(stepPath: stepPath, data: data, referenceFrame: frame, sensorType: $0, uptime: uptime, timestamp: timestamp)
+        }
     }
 
     /// Override to stop updating the motion sensors.
@@ -276,6 +300,7 @@ public class MotionRecorder : SampleRecorder {
             AudioSessionController.shared.stopAudioSession(on: self.audioSessionIdentifier)
 
             self.stopInterruptionObserver()
+            self.stopAppPausedObservers()
 
             // Stop the updates synchronously
             if let motionManager = self.motionManager {
@@ -317,19 +342,20 @@ public class MotionRecorder : SampleRecorder {
     private var _audioInterruptObserver: Any?
 
     func setupInterruptionObserver() {
-
-        // If the task should cancel if interrupted by a phone call, then set up a listener.
-        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: OperationQueue.main, using: { [weak self] (notification) in
+        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main, using: { [weak self] (notification) in
             guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                let type = AVAudioSession.InterruptionType(rawValue: rawValue), type == .began
+                  let type = AVAudioSession.InterruptionType(rawValue: rawValue),
+                  let self = self
                 else {
                     return
             }
-
-            // The motion sensor recorder is not currently designed to handle phone calls and resume. Until
-            // there is a use-case for prioritizing pause/resume of this recorder (not currently implemented),
-            // just stop the recorder. syoung 05/21/2019
-            self?.didFail(with: SampleRecorder.RecorderError.interrupted)
+            
+            if type == .began {
+                self.pause()
+            }
+            else if type == .ended {
+                self.resume()
+            }
         })
     }
 
@@ -339,6 +365,36 @@ public class MotionRecorder : SampleRecorder {
             _audioInterruptObserver = nil
         }
     }
+    
+    // MARK: App backgrounded
+    
+    private var _backgroundObserver: Any?
+    private var _activeObserver: Any?
+
+    func setupAppPausedObservers() {
+        _backgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.pause()
+        }
+        _activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.resume()
+        }
+    }
+    
+    func stopAppPausedObservers() {
+        if let observer = _backgroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = _activeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        _backgroundObserver = nil
+        _activeObserver = nil
+    }
+}
+
+#else
+
+open class MotionRecorder : SampleRecorder {
 }
 
 #endif

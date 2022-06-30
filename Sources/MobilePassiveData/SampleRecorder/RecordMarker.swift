@@ -55,10 +55,10 @@ public struct RecordMarker : SampleRecord {
         case uptime, stepPath, timestampDate, timestamp
     }
     
-    public let uptime: TimeInterval
+    public let uptime: ClockUptime
     public let stepPath: String
     public let timestampDate: Date?
-    public let timestamp: TimeInterval?
+    public let timestamp: SecondDuration?
     
     /// Default initializer.
     /// - parameters:
@@ -66,7 +66,7 @@ public struct RecordMarker : SampleRecord {
     ///     - stepPath: An identifier marking the current step.
     ///     - timestampDate: The date timestamp when the measurement was taken (if available).
     ///     - timestamp: Relative time to when the recorder was started.
-    public init(uptime: TimeInterval, timestamp: TimeInterval, date: Date, stepPath: String) {
+    public init(uptime: ClockUptime, timestamp: SecondDuration, date: Date, stepPath: String) {
         self.uptime = uptime
         self.timestamp = timestamp
         self.stepPath = stepPath

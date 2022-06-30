@@ -31,90 +31,144 @@
 //
 
 import Foundation
+import Combine
 
 #if os(iOS)
 import UIKit
 #endif
+
+/// A marker for the time (in seconds) that the processor has been awake. This is equivalent to the value returned by `ProcessInfo.processInfo.systemUptime`.
+public typealias SystemUptime = Double
+
+/// A marker for the monotonic clock time (in seconds).
+public typealias ClockUptime = Double
+
+/// A duration of time in seconds.
+public typealias SecondDuration = Double
 
 /// The purpose of this class is to allow using a normalized "uptime" for processes that may need
 /// to track the time while the device is asleep. This clock "stopwatch" will keep running even
 /// when the device has gone to sleep.
 ///
 /// - seealso: https://stackoverflow.com/questions/12488481/getting-ios-system-uptime-that-doesnt-pause-when-asleep/45068046#45068046
-public class SystemClock {
+public class SystemClock : ObservableObject {
     
     public init() {
-        self.timeMarkers = [(SystemClock.uptime(), ProcessInfo.processInfo.systemUptime)]
+        let clock = SystemClock.uptime()
+        let system = ProcessInfo.processInfo.systemUptime
         self.startDate = Date()
+        self.startUptime = clock
+        self.startSystemUptime = system
+        self.marker = .init(clock: clock, system: system)
         
         #if os(iOS)
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] (_) in
-            self?.addTimeMarkers(SystemClock.uptime(), ProcessInfo.processInfo.systemUptime)
+            guard let strongSelf = self else { return }
+            let clock = SystemClock.uptime()
+            let system = ProcessInfo.processInfo.systemUptime
+            Task {
+                await strongSelf.marker.addTimeMarkers(clock, system)
+            }
         }
         #endif
     }
     
-    private var timeMarkers: [(clock: TimeInterval, system: TimeInterval)]
+    let marker: TimeMarker
+    actor TimeMarker {
+        var timeMarkers: [(clock: ClockUptime, system: SystemUptime)]
+        var pauseStartTime: ClockUptime? = nil
+        var pauseCumulation: SecondDuration = 0
+        
+        init(clock: ClockUptime, system: SystemUptime) {
+            self.timeMarkers = [(clock, system)]
+        }
+        
+        func runningDuration(for uptime: ClockUptime) -> SecondDuration {
+            uptime - timeMarkers[0].clock - pauseCumulation
+        }
+        
+        func pause(uptime: ClockUptime) {
+            pauseStartTime = uptime
+        }
+        
+        func resume(uptime: ClockUptime) {
+            guard let pauseTime = pauseStartTime else { return }
+            pauseCumulation += (uptime - pauseTime)
+            pauseStartTime = nil
+        }
+        
+        func relativeUptime(to systemUptime: SystemUptime) -> ClockUptime {
+            let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
+            return marker.clock + (systemUptime - marker.system)
+        }
+        
+        func zeroRelativeTime(to systemUptime: SystemUptime) -> SecondDuration {
+            let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
+            return (systemUptime - marker.system) + (marker.clock - timeMarkers[0].clock)
+        }
+        
+        func addTimeMarkers(_ clock: ClockUptime, _ system: SystemUptime) {
+            timeMarkers.append((clock, system))
+        }
+    }
     
     /// The absolute start uptime for when this clock was instantiated. This uses the clock time rather than
     /// the system uptime that is used for tasks that will only fire when the device is awake.
-    public var startUptime: TimeInterval {
-        return timeMarkers[0].clock
-    }
+    public let startUptime: ClockUptime
     
     /// The system uptime for when the clock was instantiated.
-    public var startSystemUptime: TimeInterval {
-        return timeMarkers[0].system
-    }
+    public let startSystemUptime: SystemUptime
     
     /// The date timestamp for when the clock was instantiated.
     public let startDate: Date
     
-    /// This will be non-nil if the clock has been paused.
-    private var pauseStartTime: TimeInterval?
-    
-    /// The amount of time that the clock has been paused.
-    private var pauseCumulation: TimeInterval = 0
-    
     /// Is the clock paused?
-    public var isPaused: Bool {
-        return pauseStartTime != nil
+    @Published public private(set) var isPaused: Bool = false {
+        didSet {
+            onPauseChanged.send(isPaused)
+        }
     }
     
+    public let onPauseChanged = PassthroughSubject<Bool, Never>()
+    
     /// The time interval for how long the step has been running.
-    public func runningDuration(for uptime: TimeInterval = SystemClock.uptime()) -> TimeInterval {
-        return uptime - startUptime - pauseCumulation
+    public func runningDuration(for uptime: ClockUptime = SystemClock.uptime()) async -> SecondDuration {
+        await marker.runningDuration(for: uptime)
     }
     
     /// Pause the clock.
-    public func pause() {
-        guard pauseStartTime == nil else { return }
-        let uptime: TimeInterval = SystemClock.uptime()
-        pauseStartTime = uptime
+    @MainActor public func pause() {
+        let uptime: ClockUptime = SystemClock.uptime()
+        guard !isPaused else { return }
+        isPaused = true
+        Task(priority: .userInitiated) {
+            await marker.pause(uptime: uptime)
+        }
     }
     
     /// Resume the clock.
-    public func resume() {
-        guard let pauseTime = pauseStartTime else { return }
-        let uptime: TimeInterval = SystemClock.uptime()
-        pauseCumulation += (uptime - pauseTime)
-        pauseStartTime = nil
+    @MainActor public func resume() {
+        let uptime: ClockUptime = SystemClock.uptime()
+        guard isPaused else { return }
+        isPaused = false
+        Task(priority: .userInitiated) {
+            await marker.resume(uptime: uptime)
+        }
     }
     
     /// Get the clock uptime for a system awake time.
-    public func relativeUptime(to systemUptime: TimeInterval) -> TimeInterval {
-        let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
-        return marker.clock + (systemUptime - marker.system)
+    public func relativeUptime(to systemUptime: SystemUptime) async -> ClockUptime {
+        await marker.relativeUptime(to: systemUptime)
     }
     
-    /// Get the clock uptime for a system awake time.
-    public func zeroRelativeTime(to systemUptime: TimeInterval) -> TimeInterval {
-        let marker = timeMarkers.last { systemUptime >= $0.system } ?? timeMarkers.first!
-        return (systemUptime - marker.system) + (marker.clock - timeMarkers[0].clock)
+    /// Get the duration (in seconds) between the given `ProcessInfo.processInfo.systemUptime` and when
+    /// the clock was started.
+    public func zeroRelativeTime(to systemUptime: SystemUptime) async -> SecondDuration {
+        await marker.zeroRelativeTime(to: systemUptime)
     }
     
     /// Clock time.
-    public static func uptime() -> TimeInterval {
+    public static func uptime() -> ClockUptime {
         var uptime = timespec()
         guard 0 == clock_gettime(CLOCK_MONOTONIC_RAW, &uptime) else {
             print("ERROR: Could not execute clock_gettime, errno: \(errno)")
@@ -129,12 +183,14 @@ public class SystemClock {
     // allow for shared logic for tracking relative times across different view controllers and recorders
     // and is not intended to be used as a Codable model object.
     
-    internal init(clock: TimeInterval, system: TimeInterval, date: Date) {
-        self.timeMarkers = [(clock, system)]
+    internal init(clock: ClockUptime, system: SystemUptime, date: Date) {
         self.startDate = date
+        self.startUptime = clock
+        self.startSystemUptime = system
+        self.marker = .init(clock: clock, system: system)
     }
     
-    internal func addTimeMarkers(_ clock: TimeInterval, _ system: TimeInterval) {
-        self.timeMarkers.append((clock, system))
+    internal func addTimeMarkers(_ clock: ClockUptime, _ system: SystemUptime) async {
+        await marker.addTimeMarkers(clock, system)
     }
 }

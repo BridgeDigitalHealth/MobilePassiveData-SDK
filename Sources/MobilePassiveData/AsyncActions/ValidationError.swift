@@ -36,7 +36,7 @@ import Foundation
 /// `ValidationError` is a catch-all for different types of errors that occur during
 /// validation of a decoded or encoded object.
 ///
-public enum ValidationError : Error {
+public enum ValidationError : CustomNSError, LocalizedError {
     
     /// Attempting to load a section, task, or input form with non-unique identifiers.
     case notUniqueIdentifiers(String)

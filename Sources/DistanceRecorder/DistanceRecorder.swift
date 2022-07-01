@@ -317,7 +317,7 @@ public class DistanceRecorder : SampleRecorder, CLLocationManagerDelegate {
 
                 // Calculate time interval since start time
                 let timeInterval = location.timestamp.timeIntervalSince(self.startDate)
-                let uptime = self.clock.startUptime + timeInterval
+                let uptime = self.clock.startTime + timeInterval
 
                 // Update the total distance
                 let distance = self._updateTotalDistance(location)

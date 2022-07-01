@@ -1,7 +1,7 @@
 //
 //  MotionRecorder.swift
 //
-//  Copyright © 2018-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2018-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -47,12 +47,15 @@ import UIKit
 import CoreMotion
 import AVFoundation
 
-/// `MotionRecorder` is a subclass of `RSDSampleRecorder` that implements recording core motion
+/// `MotionRecorder` is a subclass of `SampleRecorder` that implements recording core motion
 /// sensor data.
 ///
-/// You will need to add the privacy permission for  motion sensors to the application `Info.plist`
-/// file. As of this writing (syoung 02/09/2018), the required key is:
-/// - `Privacy - Motion Usage Description`
+/// If using this recorder in the background, you will need to add the privacy permission for  motion sensors to the
+/// application `Info.plist` file. As of this writing (syoung 02/09/2018), the required key is:
+/// `Privacy - Motion Usage Description`
+///
+/// TODO: syoung 07/05/2022 Refactor this recorder to use newer background sensor manager rather than
+/// the hack-around of playing a silence wav file to keep the app awake.
 ///
 /// - note: This recorder is only available on iOS devices. CoreMotion is not supported by other
 ///         platforms.
@@ -62,8 +65,12 @@ open class MotionRecorder : SampleRecorder {
     
     let audioSessionIdentifier = "org.sagebase.MotionRecorder.\(UUID())"
     
-    public init(configuration: MotionRecorderConfiguration, outputDirectory: URL, initialStepPath: String?, sectionIdentifier: String?) {
-        super.init(configuration: configuration, outputDirectory: outputDirectory, initialStepPath: initialStepPath, sectionIdentifier: sectionIdentifier)
+    public init(configuration: MotionRecorderConfiguration, outputDirectory: URL, initialStepPath: String?, sectionIdentifier: String?, clockProxy: ClockProxy? = nil) {
+        var proxy: ClockProxy = clockProxy ?? SimpleClock()
+        if proxy is SimpleClock && configuration.requiresBackgroundAudio {
+            proxy = SystemClock()
+        }
+        super.init(configuration: configuration, outputDirectory: outputDirectory, initialStepPath: initialStepPath, sectionIdentifier: sectionIdentifier, clockProxy: proxy)
     }
     
     deinit {
@@ -128,6 +135,11 @@ open class MotionRecorder : SampleRecorder {
 
     /// Override to implement requesting permission to access the participant's motion sensors.
     override public func requestPermissions(on viewController: Any, _ completion: @escaping AsyncActionCompletionHandler) {
+        guard motionConfiguration?.requiresBackgroundAudio ?? false else {
+            super.requestPermissions(on: viewController, completion)
+            return
+        }
+        
         self.updateStatus(to: .requestingPermission , error: nil)
         if MotionAuthorization.authorizationStatus() == .authorized {
             self.updateStatus(to: .permissionGranted , error: nil)

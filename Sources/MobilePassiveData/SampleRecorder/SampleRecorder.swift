@@ -35,6 +35,38 @@ import Foundation
 import Combine
 import JsonModel
 
+public protocol ClockProxy : AnyObject {
+
+    /// A marker for when the clock was started. This could be either a ``ClockUptime`` (ie. computer clock) or
+    /// a ``SystemUptime`` (ie. processor clock).
+    var startTime: TimeInterval { get }
+    
+    /// The date timestamp when the clock was started.
+    var startDate: Date { get }
+    
+    /// Whether or not the clock is currently paused.
+    var isPaused: Bool { get }
+
+    /// Pause the clock.
+    @MainActor func pause()
+    
+    /// Resume running the clock.
+    @MainActor func resume()
+    
+    /// Reset the clock (zero).
+    @MainActor func reset()
+    
+    /// Get the clock uptime for a system awake time. This could be either a ``ClockUptime`` (ie. computer clock) or
+    /// a ``SystemUptime`` (ie. processor clock).
+    @MainActor func relativeUptime(to timestamp: SystemUptime) -> TimeInterval
+    
+    /// Get the duration (in seconds) between the given `ProcessInfo.processInfo.systemUptime` and when
+    /// the clock was started. This is different from ``runningDuration(timestamp:)`` in that it does not subtract
+    /// ``pauseCumulation`` or look at whether or not the clock has been stopped.
+    /// - Parameter timestamp: The timestamp (processor clock) to use in calculating duration.
+    /// - Returns: The calculated time between the timestamp and when the clock was started.
+    @MainActor func zeroRelativeTime(to timestamp: SystemUptime) -> SecondDuration
+}
 
 /// `SampleRecorder` is a base-class implementation of a controller that is used to record samples.
 ///
@@ -68,12 +100,14 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     public init(configuration: AsyncActionConfiguration,
                 outputDirectory: URL,
                 initialStepPath: String?,
-                sectionIdentifier: String?) {
+                sectionIdentifier: String?,
+                clockProxy: ClockProxy? = nil) {
         self.configuration = configuration
         self.outputDirectory = outputDirectory
         self.currentStepPath = initialStepPath ?? ""
         self.sectionIdentifier = sectionIdentifier
         self.collectionResult = CollectionResultObject(identifier: configuration.identifier)
+        self.clock = clockProxy ?? SimpleClock()
     }
     
     open var identifier: String {
@@ -98,6 +132,9 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     
     /// The configuration used to set up the controller.
     public let configuration: AsyncActionConfiguration
+    
+    /// The clock for this recorder.
+    public let clock: ClockProxy
         
     /// The status of the recorder.
     @Published public private(set) var status: AsyncActionStatus = .idle
@@ -201,10 +238,17 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
         }
 
         // Set paused to false and set the start uptime and timestamp
-        clock = SystemClock()
-        _syncUpdateStatus(.starting)
-        let stepPath = currentStepPath
-
+        Task {
+            let stepPath: String = await MainActor.run {
+                status = .starting
+                clock.reset()
+                return currentStepPath
+            }
+            _continueStart(stepPath, completion)
+        }
+    }
+    
+    private func _continueStart(_ stepPath: String, _ completion: AsyncActionCompletionHandler?) {
         self.loggerQueue.async {
             do {
                 try self._startLogger(at: stepPath)
@@ -315,16 +359,16 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     /// the task controller when the task transitions to a new step. This method will update the
     /// `currentStepPath` and add a marker to each logging file.
     public final func moveTo(stepPath: String) {
-        let clockUptime = SystemClock.uptime()
         let date = Date()
         let systemUptime = ProcessInfo.processInfo.systemUptime
         Task {
             await MainActor.run {
+                let clockUptime = clock.relativeUptime(to: systemUptime)
+                let timestamp = clock.zeroRelativeTime(to: systemUptime)
                 currentStepPath = stepPath
                 markers.append((clockUptime, stepPath))
+                _writeMarkers(stepPath: stepPath, uptime: clockUptime, timestamp: timestamp, date: date)
             }
-            let timestamp = await clock.zeroRelativeTime(to: systemUptime)
-            _writeMarkers(stepPath: stepPath, uptime: clockUptime, timestamp: timestamp, date: date)
             didMoveTo(stepPath: stepPath)
         }
     }
@@ -332,8 +376,8 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     open func didMoveTo(stepPath: String) {
     }
     
-    @MainActor public final func stepPath(for timestamp: SystemUptime) async -> String {
-        let uptime = await clock.relativeUptime(to: timestamp)
+    @MainActor public final func stepPath(for timestamp: SystemUptime) -> String {
+        let uptime = clock.relativeUptime(to: timestamp)
         return markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
     }
     
@@ -377,9 +421,6 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
             return false
         #endif
     }()
-
-    /// The clock for this recorder.
-    open private(set) var clock: SystemClock = SystemClock()
 
     /// The date timestamp for when the recorder was started.
     public var startDate: Date {
@@ -641,7 +682,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
             }
             loggers[identifier] = dataLogger
             if let logger = dataLogger as? RecordSampleLogger, self.shouldIncludeMarkers {
-                let marker = instantiateMarker(uptime: self.clock.startUptime, timestamp: 0, date: self.clock.startDate, stepPath: stepPath, loggerIdentifier: identifier)
+                let marker = instantiateMarker(uptime: clock.startTime, timestamp: 0, date: self.clock.startDate, stepPath: stepPath, loggerIdentifier: identifier)
                 try logger.writeSample(marker)
             }
         }
@@ -658,13 +699,13 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
                 return .init(identifier: identifier,
                              url: fileHandle.url,
                              rootSchema: schema,
-                             startUptime: self.clock.startSystemUptime)
+                             startUptime: clock.startTime)
             }
             else {
                 return .init(identifier: identifier,
                              url: fileHandle.url,
                              contentType: fileHandle.contentType,
-                             startUptime: self.clock.startSystemUptime)
+                             startUptime: clock.startTime)
             }
         }()
         fileResult.startDate = self.startDate

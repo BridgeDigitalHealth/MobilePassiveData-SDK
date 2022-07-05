@@ -1,7 +1,7 @@
 //
 //  MotionRecorder.swift
 //
-//  Copyright © 2018-2021 Sage Bionetworks. All rights reserved.
+//  Copyright © 2018-2022 Sage Bionetworks. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -47,12 +47,15 @@ import UIKit
 import CoreMotion
 import AVFoundation
 
-/// `MotionRecorder` is a subclass of `RSDSampleRecorder` that implements recording core motion
+/// `MotionRecorder` is a subclass of `SampleRecorder` that implements recording core motion
 /// sensor data.
 ///
-/// You will need to add the privacy permission for  motion sensors to the application `Info.plist`
-/// file. As of this writing (syoung 02/09/2018), the required key is:
-/// - `Privacy - Motion Usage Description`
+/// If using this recorder in the background, you will need to add the privacy permission for  motion sensors to the
+/// application `Info.plist` file. As of this writing (syoung 02/09/2018), the required key is:
+/// `Privacy - Motion Usage Description`
+///
+/// TODO: syoung 07/05/2022 Refactor this recorder to use newer background sensor manager rather than
+/// the hack-around of playing a silence wav file to keep the app awake.
 ///
 /// - note: This recorder is only available on iOS devices. CoreMotion is not supported by other
 ///         platforms.
@@ -62,8 +65,12 @@ open class MotionRecorder : SampleRecorder {
     
     let audioSessionIdentifier = "org.sagebase.MotionRecorder.\(UUID())"
     
-    public init(configuration: MotionRecorderConfiguration, outputDirectory: URL, initialStepPath: String?, sectionIdentifier: String?) {
-        super.init(configuration: configuration, outputDirectory: outputDirectory, initialStepPath: initialStepPath, sectionIdentifier: sectionIdentifier)
+    public init(configuration: MotionRecorderConfiguration, outputDirectory: URL, initialStepPath: String?, sectionIdentifier: String?, clockProxy: ClockProxy? = nil) {
+        var proxy: ClockProxy = clockProxy ?? SimpleClock()
+        if proxy is SimpleClock && configuration.requiresBackgroundAudio {
+            proxy = SystemClock()
+        }
+        super.init(configuration: configuration, outputDirectory: outputDirectory, initialStepPath: initialStepPath, sectionIdentifier: sectionIdentifier, clockProxy: proxy)
     }
     
     deinit {
@@ -124,10 +131,15 @@ open class MotionRecorder : SampleRecorder {
     /// The motion queue is the operation queue that is used for the motion updates callback.
     private let motionQueue = OperationQueue()
     
-    override public var schemaDoc: DocumentableRootArray? { motionRecordSchema }
+    override open var schemaDoc: DocumentableRootArray? { motionRecordSchema }
 
     /// Override to implement requesting permission to access the participant's motion sensors.
     override public func requestPermissions(on viewController: Any, _ completion: @escaping AsyncActionCompletionHandler) {
+        guard motionConfiguration?.requiresBackgroundAudio ?? false else {
+            super.requestPermissions(on: viewController, completion)
+            return
+        }
+        
         self.updateStatus(to: .requestingPermission , error: nil)
         if MotionAuthorization.authorizationStatus() == .authorized {
             self.updateStatus(to: .permissionGranted , error: nil)
@@ -162,9 +174,6 @@ open class MotionRecorder : SampleRecorder {
             if strongSelf.motionConfiguration?.requiresBackgroundAudio ?? false {
                 AudioSessionController.shared.startBackgroundAudioIfNeeded(on: strongSelf.audioSessionIdentifier)
             }
-            else {
-                strongSelf.setupAppPausedObservers()
-            }
         }
     }
 
@@ -194,9 +203,6 @@ open class MotionRecorder : SampleRecorder {
                 }
             }
         }
-
-        // Set up the interruption observer.
-        self.setupInterruptionObserver()
     }
 
     func startAccelerometer(with motionManager: CMMotionManager, updateInterval: TimeInterval, completion: ((Error?) -> Void)?) {
@@ -242,7 +248,7 @@ open class MotionRecorder : SampleRecorder {
     }
 
     func recordRawSample(_ data: MotionVectorData) {
-        guard !clock.isPaused else { return }
+        guard !isPaused else { return }
         Task {
             async let uptime = clock.relativeUptime(to: data.timestamp)
             async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
@@ -272,7 +278,7 @@ open class MotionRecorder : SampleRecorder {
     }
     
     func recordDeviceMotionSample(_ data: CMDeviceMotion) {
-        guard !self.isPaused, !clock.isPaused else { return }
+        guard !isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
         Task {
             async let uptime = clock.relativeUptime(to: data.timestamp)
@@ -298,9 +304,6 @@ open class MotionRecorder : SampleRecorder {
         DispatchQueue.main.async {
             
             AudioSessionController.shared.stopAudioSession(on: self.audioSessionIdentifier)
-
-            self.stopInterruptionObserver()
-            self.stopAppPausedObservers()
 
             // Stop the updates synchronously
             if let motionManager = self.motionManager {
@@ -335,60 +338,6 @@ open class MotionRecorder : SampleRecorder {
         } else {
             return nil
         }
-    }
-
-    // MARK: Phone interruption
-
-    private var _audioInterruptObserver: Any?
-
-    func setupInterruptionObserver() {
-        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main, using: { [weak self] (notification) in
-            guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                  let type = AVAudioSession.InterruptionType(rawValue: rawValue),
-                  let self = self
-                else {
-                    return
-            }
-            
-            if type == .began {
-                self.pause()
-            }
-            else if type == .ended {
-                self.resume()
-            }
-        })
-    }
-
-    func stopInterruptionObserver() {
-        if let observer = _audioInterruptObserver {
-            NotificationCenter.default.removeObserver(observer)
-            _audioInterruptObserver = nil
-        }
-    }
-    
-    // MARK: App backgrounded
-    
-    private var _backgroundObserver: Any?
-    private var _activeObserver: Any?
-
-    func setupAppPausedObservers() {
-        _backgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.pause()
-        }
-        _activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.resume()
-        }
-    }
-    
-    func stopAppPausedObservers() {
-        if let observer = _backgroundObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = _activeObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        _backgroundObserver = nil
-        _activeObserver = nil
     }
 }
 

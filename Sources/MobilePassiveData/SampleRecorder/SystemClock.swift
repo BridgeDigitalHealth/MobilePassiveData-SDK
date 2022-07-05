@@ -51,14 +51,13 @@ public typealias SecondDuration = Double
 /// when the device has gone to sleep.
 ///
 /// - seealso: https://stackoverflow.com/questions/12488481/getting-ios-system-uptime-that-doesnt-pause-when-asleep/45068046#45068046
-public class SystemClock : ObservableObject {
-    
+public class SystemClock : ObservableObject, ClockProxy {
+
     public init() {
         let clock = SystemClock.uptime()
         let system = ProcessInfo.processInfo.systemUptime
         self.startDate = Date()
         self.startUptime = clock
-        self.startSystemUptime = system
         self.marker = .init(clock: clock, system: system)
         
         #if os(iOS)
@@ -73,13 +72,13 @@ public class SystemClock : ObservableObject {
         #endif
     }
     
-    let marker: TimeMarker
-    actor TimeMarker {
+    private var marker: TimeMarker
+    @MainActor class TimeMarker {
         var timeMarkers: [(clock: ClockUptime, system: SystemUptime)]
         var pauseStartTime: ClockUptime? = nil
         var pauseCumulation: SecondDuration = 0
         
-        init(clock: ClockUptime, system: SystemUptime) {
+        nonisolated init(clock: ClockUptime, system: SystemUptime) {
             self.timeMarkers = [(clock, system)]
         }
         
@@ -114,13 +113,10 @@ public class SystemClock : ObservableObject {
     
     /// The absolute start uptime for when this clock was instantiated. This uses the clock time rather than
     /// the system uptime that is used for tasks that will only fire when the device is awake.
-    public let startUptime: ClockUptime
-    
-    /// The system uptime for when the clock was instantiated.
-    public let startSystemUptime: SystemUptime
+    public private(set) var startUptime: ClockUptime
     
     /// The date timestamp for when the clock was instantiated.
-    public let startDate: Date
+    public private(set) var startDate: Date
     
     /// Is the clock paused?
     @Published public private(set) var isPaused: Bool = false {
@@ -131,9 +127,25 @@ public class SystemClock : ObservableObject {
     
     public let onPauseChanged = PassthroughSubject<Bool, Never>()
     
+    public var startTime: TimeInterval {
+        startUptime
+    }
+    
+    public func now() -> TimeInterval {
+        SystemClock.uptime()
+    }
+    
+    @MainActor public func reset() {
+        let clock = SystemClock.uptime()
+        let system = ProcessInfo.processInfo.systemUptime
+        self.startDate = Date()
+        self.startUptime = clock
+        self.marker = .init(clock: clock, system: system)
+    }
+    
     /// The time interval for how long the step has been running.
-    public func runningDuration(for uptime: ClockUptime = SystemClock.uptime()) async -> SecondDuration {
-        await marker.runningDuration(for: uptime)
+    @MainActor public func runningDuration(for uptime: ClockUptime = SystemClock.uptime()) -> SecondDuration {
+        marker.runningDuration(for: uptime)
     }
     
     /// Pause the clock.
@@ -141,9 +153,7 @@ public class SystemClock : ObservableObject {
         let uptime: ClockUptime = SystemClock.uptime()
         guard !isPaused else { return }
         isPaused = true
-        Task(priority: .userInitiated) {
-            await marker.pause(uptime: uptime)
-        }
+        marker.pause(uptime: uptime)
     }
     
     /// Resume the clock.
@@ -151,20 +161,18 @@ public class SystemClock : ObservableObject {
         let uptime: ClockUptime = SystemClock.uptime()
         guard isPaused else { return }
         isPaused = false
-        Task(priority: .userInitiated) {
-            await marker.resume(uptime: uptime)
-        }
+        marker.resume(uptime: uptime)
     }
     
     /// Get the clock uptime for a system awake time.
-    public func relativeUptime(to systemUptime: SystemUptime) async -> ClockUptime {
-        await marker.relativeUptime(to: systemUptime)
+    @MainActor public func relativeUptime(to systemUptime: SystemUptime) -> TimeInterval {
+        marker.relativeUptime(to: systemUptime)
     }
     
     /// Get the duration (in seconds) between the given `ProcessInfo.processInfo.systemUptime` and when
     /// the clock was started.
-    public func zeroRelativeTime(to systemUptime: SystemUptime) async -> SecondDuration {
-        await marker.zeroRelativeTime(to: systemUptime)
+    @MainActor public func zeroRelativeTime(to systemUptime: SystemUptime) -> SecondDuration {
+        marker.zeroRelativeTime(to: systemUptime)
     }
     
     /// Clock time.
@@ -186,7 +194,6 @@ public class SystemClock : ObservableObject {
     internal init(clock: ClockUptime, system: SystemUptime, date: Date) {
         self.startDate = date
         self.startUptime = clock
-        self.startSystemUptime = system
         self.marker = .init(clock: clock, system: system)
     }
     

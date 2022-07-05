@@ -101,8 +101,8 @@ public final class AudioFileSoundPlayer : NSObject, SoundPlayer {
     /// - parameter sound: The system sound to play.
     public func playSound(_ sound: SoundFile) {
         #if !canImport(AudioToolbox)
+            // Playing sounds is not supported
             print("WARNING! AudioToolbox is not supported on this platform.")
-            return  // Playing sounds is not supported
         #else
             guard let url = sound.url else { return }
             var soundId: SystemSoundID = 0
@@ -116,6 +116,15 @@ public final class AudioFileSoundPlayer : NSObject, SoundPlayer {
             }, nil)
             AudioServicesPlaySystemSound(soundId)
         #endif
+    }
+    
+    public func vibrateDevice() {
+    #if !canImport(AudioToolbox)
+        // Playing sounds is not supported
+        print("WARNING! AudioToolbox is not supported on this platform.")
+    #else
+        AudioServicesPlayAlertSound(SystemSoundID(kSystemSoundID_Vibrate))
+    #endif
     }
 }
 

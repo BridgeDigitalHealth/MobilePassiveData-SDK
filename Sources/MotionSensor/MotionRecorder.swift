@@ -174,9 +174,6 @@ open class MotionRecorder : SampleRecorder {
             if strongSelf.motionConfiguration?.requiresBackgroundAudio ?? false {
                 AudioSessionController.shared.startBackgroundAudioIfNeeded(on: strongSelf.audioSessionIdentifier)
             }
-            else {
-                strongSelf.setupAppPausedObservers()
-            }
         }
     }
 
@@ -206,9 +203,6 @@ open class MotionRecorder : SampleRecorder {
                 }
             }
         }
-
-        // Set up the interruption observer.
-        self.setupInterruptionObserver()
     }
 
     func startAccelerometer(with motionManager: CMMotionManager, updateInterval: TimeInterval, completion: ((Error?) -> Void)?) {
@@ -254,7 +248,7 @@ open class MotionRecorder : SampleRecorder {
     }
 
     func recordRawSample(_ data: MotionVectorData) {
-        guard !clock.isPaused else { return }
+        guard !isPaused else { return }
         Task {
             async let uptime = clock.relativeUptime(to: data.timestamp)
             async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
@@ -284,7 +278,7 @@ open class MotionRecorder : SampleRecorder {
     }
     
     func recordDeviceMotionSample(_ data: CMDeviceMotion) {
-        guard !self.isPaused, !clock.isPaused else { return }
+        guard !isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
         Task {
             async let uptime = clock.relativeUptime(to: data.timestamp)
@@ -310,9 +304,6 @@ open class MotionRecorder : SampleRecorder {
         DispatchQueue.main.async {
             
             AudioSessionController.shared.stopAudioSession(on: self.audioSessionIdentifier)
-
-            self.stopInterruptionObserver()
-            self.stopAppPausedObservers()
 
             // Stop the updates synchronously
             if let motionManager = self.motionManager {
@@ -347,60 +338,6 @@ open class MotionRecorder : SampleRecorder {
         } else {
             return nil
         }
-    }
-
-    // MARK: Phone interruption
-
-    private var _audioInterruptObserver: Any?
-
-    func setupInterruptionObserver() {
-        _audioInterruptObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main, using: { [weak self] (notification) in
-            guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                  let type = AVAudioSession.InterruptionType(rawValue: rawValue),
-                  let self = self
-                else {
-                    return
-            }
-            
-            if type == .began {
-                self.pause()
-            }
-            else if type == .ended {
-                self.resume()
-            }
-        })
-    }
-
-    func stopInterruptionObserver() {
-        if let observer = _audioInterruptObserver {
-            NotificationCenter.default.removeObserver(observer)
-            _audioInterruptObserver = nil
-        }
-    }
-    
-    // MARK: App backgrounded
-    
-    private var _backgroundObserver: Any?
-    private var _activeObserver: Any?
-
-    func setupAppPausedObservers() {
-        _backgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.pause()
-        }
-        _activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.resume()
-        }
-    }
-    
-    func stopAppPausedObservers() {
-        if let observer = _backgroundObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        if let observer = _activeObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        _backgroundObserver = nil
-        _activeObserver = nil
     }
 }
 

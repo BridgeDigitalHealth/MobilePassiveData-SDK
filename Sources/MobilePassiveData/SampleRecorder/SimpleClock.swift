@@ -36,6 +36,7 @@ import Combine
 
 #if os(iOS)
 import UIKit
+import AVFoundation
 #endif
 
 /// This is a simple clock used to track pause state of a recorder or active step. This can be used to pause animations,
@@ -72,11 +73,27 @@ public final class SimpleClock : ObservableObject, ClockProxy {
     
     @MainActor func setupNotifications() {
 #if os(iOS)
+        // Pause/resume the clock when the app is sent to the background.
         NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
             self?.pause()
         }
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             self?.resume()
+        }
+        // Pause/resume the clock when the participant answers a phone call.
+        NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] (notification) in
+            guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: rawValue)
+                else {
+                    return
+            }
+            
+            if type == .began {
+                self?.pause()
+            }
+            else if type == .ended {
+                self?.resume()
+            }
         }
 #endif
     }

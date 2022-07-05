@@ -46,6 +46,9 @@ public protocol ClockProxy : AnyObject {
     
     /// Whether or not the clock is currently paused.
     var isPaused: Bool { get }
+    
+    /// The time interval marking "now".
+    func now() -> TimeInterval
 
     /// Pause the clock.
     @MainActor func pause()

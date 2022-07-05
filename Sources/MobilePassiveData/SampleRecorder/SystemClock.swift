@@ -131,6 +131,10 @@ public class SystemClock : ObservableObject, ClockProxy {
         startUptime
     }
     
+    public func now() -> TimeInterval {
+        SystemClock.uptime()
+    }
+    
     @MainActor public func reset() {
         let clock = SystemClock.uptime()
         let system = ProcessInfo.processInfo.systemUptime

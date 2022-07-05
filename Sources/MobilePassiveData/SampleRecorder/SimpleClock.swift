@@ -100,9 +100,13 @@ public final class SimpleClock : ObservableObject, ClockProxy {
     
     private(set) var pauseStartTime: ClockUptime? = nil
     
+    public func now() -> TimeInterval {
+        ProcessInfo.processInfo.systemUptime
+    }
+    
     /// Reset the clock (zero).
     public func reset() {
-        startTime = ProcessInfo.processInfo.systemUptime
+        startTime = now()
         stopTime = nil
         pauseStartTime = nil
         pauseCumulation = 0
@@ -111,7 +115,7 @@ public final class SimpleClock : ObservableObject, ClockProxy {
     
     /// Stop the clock.
     public func stop() {
-        stopTime = ProcessInfo.processInfo.systemUptime
+        stopTime = now()
     }
     
     /// The total time that the clock is/was running.

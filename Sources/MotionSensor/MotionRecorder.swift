@@ -131,7 +131,7 @@ open class MotionRecorder : SampleRecorder {
     /// The motion queue is the operation queue that is used for the motion updates callback.
     private let motionQueue = OperationQueue()
     
-    override public var schemaDoc: DocumentableRootArray? { motionRecordSchema }
+    override open var schemaDoc: DocumentableRootArray? { motionRecordSchema }
 
     /// Override to implement requesting permission to access the participant's motion sensors.
     override public func requestPermissions(on viewController: Any, _ completion: @escaping AsyncActionCompletionHandler) {

@@ -144,8 +144,12 @@ public class SystemClock : ObservableObject, ClockProxy {
     }
     
     /// The time interval for how long the step has been running.
-    @MainActor public func runningDuration(for uptime: ClockUptime = SystemClock.uptime()) -> SecondDuration {
+    @MainActor public func runningDuration(for uptime: ClockUptime) -> SecondDuration {
         marker.runningDuration(for: uptime)
+    }
+    
+    @MainActor public func runningDuration() -> SecondDuration {
+        runningDuration(for: SystemClock.uptime())
     }
     
     /// Pause the clock.

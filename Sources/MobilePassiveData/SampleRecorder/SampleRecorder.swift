@@ -59,6 +59,9 @@ public protocol ClockProxy : AnyObject {
     /// Reset the clock (zero).
     @MainActor func reset()
     
+    /// How long has this clock been running.
+    @MainActor func runningDuration() -> SecondDuration
+    
     /// Get the clock uptime for a system awake time. This could be either a ``ClockUptime`` (ie. computer clock) or
     /// a ``SystemUptime`` (ie. processor clock).
     @MainActor func relativeUptime(to timestamp: SystemUptime) -> TimeInterval

@@ -119,8 +119,12 @@ public final class SimpleClock : ObservableObject, ClockProxy {
     }
     
     /// The total time that the clock is/was running.
-    public func runningDuration(timestamp: SystemUptime = ProcessInfo.processInfo.systemUptime) -> SecondDuration {
+    public func runningDuration(timestamp: SystemUptime) -> SecondDuration {
         (stopTime ?? timestamp) - startTime - pauseCumulation
+    }
+    
+    public func runningDuration() -> SecondDuration {
+        runningDuration(timestamp: ProcessInfo.processInfo.systemUptime)
     }
     
     /// How long the clock has been stopped.

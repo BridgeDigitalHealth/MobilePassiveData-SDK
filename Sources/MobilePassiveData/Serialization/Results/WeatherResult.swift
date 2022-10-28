@@ -33,6 +33,7 @@
 
 import Foundation
 import JsonModel
+import ResultModel
 
 extension SerializableResultType {
     public static let weather: SerializableResultType = "weather"

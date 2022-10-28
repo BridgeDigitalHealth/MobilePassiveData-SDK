@@ -37,6 +37,7 @@ import CoreLocation
 import CoreMotion
 import MobilePassiveData
 import JsonModel
+import ResultModel
 import MotionSensor
 
 

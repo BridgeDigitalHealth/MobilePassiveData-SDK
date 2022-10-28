@@ -32,6 +32,7 @@
 
 import Foundation
 import JsonModel
+import ResultModel
 
 /// `MobilePassiveDataFactory` is a subclass of the `ResultDataFactory` that registers a serializer
 /// for `AsyncActionConfiguration` objects that can be used to deserialize the results.

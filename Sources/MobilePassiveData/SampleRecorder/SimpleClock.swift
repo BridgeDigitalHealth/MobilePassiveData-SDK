@@ -75,27 +75,33 @@ public final class SimpleClock : ObservableObject, ClockProxy {
 #if os(iOS)
         // Pause/resume the clock when the app is sent to the background.
         NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.pause()
+            self?._handleNotification(pauseOn: true)
         }
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.resume()
+            self?._handleNotification(pauseOn: false)
         }
         // Pause/resume the clock when the participant answers a phone call.
         NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] (notification) in
             guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                  let type = AVAudioSession.InterruptionType(rawValue: rawValue)
+                  let type = AVAudioSession.InterruptionType(rawValue: rawValue),
+                  (type == .began || type == .ended)
                 else {
                     return
             }
-            
-            if type == .began {
-                self?.pause()
-            }
-            else if type == .ended {
-                self?.resume()
-            }
+            self?._handleNotification(pauseOn: type == .began)
         }
 #endif
+    }
+    
+    private func _handleNotification(pauseOn: Bool) {
+        Task {
+            if pauseOn {
+                await pause()
+            }
+            else {
+                await resume()
+            }
+        }
     }
     
     private(set) var pauseStartTime: ClockUptime? = nil

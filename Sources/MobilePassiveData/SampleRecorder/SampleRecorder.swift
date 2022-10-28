@@ -34,6 +34,7 @@
 import Foundation
 import Combine
 import JsonModel
+import ResultModel
 
 public protocol ClockProxy : AnyObject {
 

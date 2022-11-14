@@ -2,8 +2,6 @@ package org.sagebionetworks.assessmentmodel.passivedata.recorder.weather
 
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.supervisorScope

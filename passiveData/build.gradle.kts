@@ -58,11 +58,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(Deps.Coroutines.core) {
-                    version {
-                        strictly(Versions.kotlinCoroutines)
-                    }
-                }
+                implementation(Deps.Coroutines.core)
 
                 implementation(Deps.KotlinX.dateTime)
                 api(Deps.KotlinX.serializationJson)
@@ -70,6 +66,7 @@ kotlin {
                 implementation(Deps.Ktor.clientCore)
                 //Is api to give depending modules access to JsonElement
                 api(Deps.Ktor.clientSerialization)
+                api(Deps.Ktor.clientContentNegotion)
                 implementation(Deps.Ktor.clientLogging)
 
                 // koin

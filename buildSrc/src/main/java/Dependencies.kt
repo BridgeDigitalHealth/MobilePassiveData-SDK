@@ -2,15 +2,15 @@ object Versions {
 
     const val assessmentVersion = "0.4.4"
 
-    const val kotlinxDateTime = "0.3.0"
+    const val kotlinxDateTime = "0.4.0"
 
-    const val kotlin = "1.5.31"
-    const val kotlinxSerializationJson = "1.3.0"
-    const val kotlinCoroutines = "1.5.2-native-mt"
+    const val kotlin = "1.7.0"
+    const val kotlinxSerializationJson = "1.3.2"
+    const val kotlinCoroutines = "1.6.4"
 
-    const val ktor = "1.6.3"
+    const val ktor = "2.1.1"
 
-    const val koin = "3.1.1"
+    const val koin = "3.1.5"
 
     const val napier = "2.1.0"
 }
@@ -34,10 +34,11 @@ object Deps {
 
     object Ktor {
         val clientCore = "io.ktor:ktor-client-core:${Versions.ktor}"
+        val clientContentNegotion = "io.ktor:ktor-client-content-negotiation:${Versions.ktor}"
         val clientMock = "io.ktor:ktor-client-mock:${Versions.ktor}"
 
         val clientLogging = "io.ktor:ktor-client-logging:${Versions.ktor}"
-        val clientSerialization = "io.ktor:ktor-client-serialization:${Versions.ktor}"
+        val clientSerialization = "io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}"
 
         val clientAndroid = "io.ktor:ktor-client-android:${Versions.ktor}"
         val clientIos = "io.ktor:ktor-client-ios:${Versions.ktor}"

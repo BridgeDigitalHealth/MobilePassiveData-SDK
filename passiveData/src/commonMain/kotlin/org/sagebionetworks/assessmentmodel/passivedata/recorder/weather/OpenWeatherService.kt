@@ -2,6 +2,7 @@ package org.sagebionetworks.assessmentmodel.passivedata.recorder.weather
 
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
+import io.ktor.client.call.*
 import org.sagebionetworks.assessmentmodel.passivedata.ResultData
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -27,7 +28,7 @@ class OpenWeatherService(
             header("Accept", "application/json")
         }
 
-        return httpClient.get<Response>(builder)
+        return httpClient.get(builder).body<Response>()
             .toWeatherServiceResult(configuration.identifier)
     }
 

@@ -7,9 +7,11 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
+import org.sagebionetworks.assessmentmodel.FileResult
 import org.sagebionetworks.assessmentmodel.passivedata.asyncaction.AsyncActionConfiguration
 import org.sagebionetworks.assessmentmodel.passivedata.asyncaction.AsyncActionStatus
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.motion.FlowRecorder
+import org.sagebionetworks.assessmentmodel.serialization.FileResultObject
 import java.io.File
 import java.io.IOException
 import java.io.PrintStream
@@ -75,12 +77,13 @@ abstract class FlowJsonFileResultRecorder<in E>(
         if (e == null || e is CancellationException) {
             filePrintStream.print(JSON_FILE_END)
             result.complete(
-                FileResult(
-                    identifier,
-                    startTime ?: Clock.System.now(),
-                    endTime ?: Clock.System.now(),
-                    JSON_MIME_CONTENT_TYPE,
-                    file.path
+                FileResultObject(
+                    identifier = identifier,
+                    startDateTime = startTime ?: Clock.System.now(),
+                    endDateTime = endTime ?: Clock.System.now(),
+                    filename = file.name,
+                    contentType = JSON_MIME_CONTENT_TYPE,
+                    path = file.path
                 )
             )
             _asyncStatus = AsyncActionStatus.FINISHED

@@ -1,6 +1,6 @@
 object Versions {
 
-    const val assessmentVersion = "0.4.4"
+    const val assessmentVersion = "0.10.0"
 
     const val kotlinxDateTime = "0.4.0"
 
@@ -28,8 +28,8 @@ object Deps {
     }
 
     object AssessmentModel {
-        val sdk =
-            "org.sagebionetworks.assessmentmodel:assessmentModel:${Versions.assessmentVersion}"
+        val results =
+            "org.sagebionetworks.assessmentmodel:assessmentResults:${Versions.assessmentVersion}"
     }
 
     object Ktor {

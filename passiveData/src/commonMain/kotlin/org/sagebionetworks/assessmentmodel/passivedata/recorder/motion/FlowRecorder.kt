@@ -6,12 +6,12 @@ import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import org.sagebionetworks.assessmentmodel.passivedata.ResultData
+import org.sagebionetworks.assessmentmodel.Result
 import org.sagebionetworks.assessmentmodel.passivedata.asyncaction.AsyncActionConfiguration
 import org.sagebionetworks.assessmentmodel.passivedata.asyncaction.AsyncActionStatus
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.Recorder
 
-abstract class FlowRecorder<in E, out R : ResultData>(
+abstract class FlowRecorder<in E, out R : Result>(
     open val identifier: String,
     override val configuration: AsyncActionConfiguration,
     open val scope: CoroutineScope,

@@ -1,6 +1,6 @@
 object Versions {
 
-    const val assessmentVersion = "0.10.0"
+    const val assessmentVersion = "0.10.1"
 
     const val kotlinxDateTime = "0.4.0"
 

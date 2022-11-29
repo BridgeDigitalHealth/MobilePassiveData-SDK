@@ -1,9 +1,9 @@
 package org.sagebionetworks.assessmentmodel.passivedata.asyncaction
 
-import org.sagebionetworks.assessmentmodel.passivedata.ResultData
+import org.sagebionetworks.assessmentmodel.Result
 import kotlinx.coroutines.Deferred
 
-interface AsyncActionController<out R : ResultData> {
+interface AsyncActionController<out R : Result> {
 
     /// The status of the controller.
     val status: AsyncActionStatus

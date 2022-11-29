@@ -1,4 +1,4 @@
-@file:UseSerializers(OffsetZonedInstantSerializer::class, LongNanosAsSecondsSerializer::class)
+@file:UseSerializers(InstantSerializer::class, LongNanosAsSecondsSerializer::class)
 
 package org.sagebionetworks.assessmentmodel.passivedata.recorder.sensor
 
@@ -16,10 +16,10 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import org.sagebionetworks.assessmentmodel.passivedata.OffsetZonedInstantSerializer
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.SampleRecord
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.motion.DeviceMotionUtil
 import org.sagebionetworks.assessmentmodel.passivedata.recorder.motion.DeviceMotionUtil.Companion.SENSOR_TYPE_TO_DATA_TYPE
+import org.sagebionetworks.assessmentmodel.serialization.InstantSerializer
 
 interface SensorRecord
     : SampleRecord {

@@ -5,17 +5,17 @@ plugins {
 
 dependencies {
     implementation(project(":passiveData"))
-    implementation("com.google.android.material:material:1.3.0")
-    implementation("androidx.appcompat:appcompat:1.2.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.0.4")
+    //implementation("com.google.android.material:material:1.7.0")
+    //implementation("androidx.appcompat:appcompat:1.5.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }
 
 android {
-    compileSdk = 30
+    compileSdk = 32
     defaultConfig {
         applicationId = "org.sagebionetworks.assessmentmodel.passivedata.android"
         minSdk = 21
-        targetSdk = 30
+        targetSdk = 31
         versionCode = 1
         versionName = "1.0"
     }

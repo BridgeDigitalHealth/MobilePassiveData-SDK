@@ -12,7 +12,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.sagebionetworks.assessmentmodel.passivedata.ResultData
+import org.sagebionetworks.assessmentmodel.Result
 
 class AirQualityService(
     override val configuration: WeatherServiceConfiguration,
@@ -20,7 +20,7 @@ class AirQualityService(
 ) : WeatherService {
 
     @ExperimentalSerializationApi
-    override suspend fun getResult(location: Location): ResultData {
+    override suspend fun getResult(location: Location): Result {
 
         val startTime = Clock.System.now()
         val dateString = startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
@@ -94,7 +94,7 @@ class AirQualityService(
             return AirQualityServiceResult(
                 identifier = identifier,
                 providerName = WeatherServiceProviderName.AIR_NOW,
-                startDate = startDate,
+                startDateTime = startDate,
                 aqi = aqi,
                 category = category?.let {
                     AirQualityServiceResult.Category(category.number, category.name)

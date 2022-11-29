@@ -6,7 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
-import org.sagebionetworks.assessmentmodel.passivedata.ResultData
+import org.sagebionetworks.assessmentmodel.Result
 import org.sagebionetworks.assessmentmodel.passivedata.resultDataSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 
 class WeatherResultTest {
     @Serializable
-    class ResultDataWrapper(val resultData: ResultData)
+    class ResultDataWrapper(val resultData: Result)
 
     val jsonCoder = Json {
         serializersModule += resultDataSerializersModule
@@ -24,7 +24,7 @@ class WeatherResultTest {
     @Test
     fun testPolymorphicSerialization() {
 
-        val weatherResult: ResultData =
+        val weatherResult: Result =
             WeatherResult("identifier", weather = null, airQuality = null)
 
 
@@ -41,11 +41,11 @@ class WeatherResultTest {
 
         val expectedResult = WeatherResult(
             identifier = "weather",
-            startDate = Instant.parse("2021-09-20T16:34:47.782-07:00"),
-            endDate = Instant.parse("2021-09-20T16:34:47.782-07:00"),
+            startDateTime = Instant.parse("2021-09-20T16:34:47.782-07:00"),
+            endDateTime = Instant.parse("2021-09-20T16:34:47.782-07:00"),
             airQuality = AirQualityServiceResult(
                 identifier = "airQuality",
-                startDate = Instant.parse("2021-09-20T16:34:48.839-07:00"),
+                startDateTime = Instant.parse("2021-09-20T16:34:48.839-07:00"),
                 providerName = WeatherServiceProviderName.AIR_NOW,
                 aqi = 57,
                 category = AirQualityServiceResult.Category(2, "Moderate")
@@ -53,7 +53,7 @@ class WeatherResultTest {
             weather = WeatherServiceResult(
                 identifier = "weather",
                 providerName = WeatherServiceProviderName.OPEN_WEATHER,
-                startDate = Instant.parse("2021-09-20T16:30:19.000-07:00"),
+                startDateTime = Instant.parse("2021-09-20T16:30:19.000-07:00"),
                 temperature = 28.960000000000001,
                 seaLevelPressure = 1014.0,
                 wind = WeatherServiceResult.Wind(

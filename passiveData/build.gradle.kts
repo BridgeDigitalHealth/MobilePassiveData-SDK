@@ -69,12 +69,14 @@ kotlin {
                 api(Deps.Ktor.clientContentNegotion)
                 implementation(Deps.Ktor.clientLogging)
 
+                implementation(Deps.AssessmentModel.results)
+
                 // koin
                 api(Deps.Koin.core)
 
                 implementation(Deps.Napier.napier)
 
-                implementation("com.google.android.gms:play-services-location:18.0.0")
+                implementation("com.google.android.gms:play-services-location:21.0.1")
 
             }
         }
@@ -114,11 +116,11 @@ kotlin {
 }
 
 android {
-    compileSdk = 30
+    compileSdk = 32
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     defaultConfig {
         minSdk = 21
-        targetSdk = 30
+        targetSdk = 31
     }
 
     compileOptions {

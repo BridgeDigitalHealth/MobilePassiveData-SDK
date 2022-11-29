@@ -3,7 +3,7 @@ package org.sagebionetworks.assessmentmodel.passivedata.recorder.weather
 import io.github.aakira.napier.Napier
 import io.ktor.client.*
 import io.ktor.client.call.*
-import org.sagebionetworks.assessmentmodel.passivedata.ResultData
+import org.sagebionetworks.assessmentmodel.Result
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.datetime.Instant
@@ -15,7 +15,7 @@ class OpenWeatherService(
     override val configuration: WeatherServiceConfiguration,
     val httpClient: HttpClient
 ) : WeatherService {
-    override suspend fun getResult(location: Location): ResultData {
+    override suspend fun getResult(location: Location): Result {
         val url =
             "https://api.openweathermap.org/data/2.5/weather" +
                     "?lat=${location.latitude}&lon=${location.longitude}" +
@@ -130,7 +130,7 @@ class OpenWeatherService(
             return WeatherServiceResult(
                 identifier = identifier,
                 providerName = WeatherServiceProviderName.OPEN_WEATHER,
-                startDate = dt,
+                startDateTime = dt,
                 temperature = main.temp,
                 seaLevelPressure = main.seaLevel,
                 groundLevelPressure = main.grnd_level,

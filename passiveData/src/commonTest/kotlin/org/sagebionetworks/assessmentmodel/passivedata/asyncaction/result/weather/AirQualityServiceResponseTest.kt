@@ -48,7 +48,7 @@ class AirQualityServiceResponseTest {
         )
         with(response) {
             assertEquals("resultId", identifier)
-            assertEquals(startTime, startDate)
+            assertEquals(startTime, startDateTime)
             assertEquals(57, aqi)
             assertEquals(2, category?.number)
             assertEquals("Moderate", category?.name)

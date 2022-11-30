@@ -249,7 +249,7 @@ class DeviceMotionUtil {
 
             // accelerometer
             sensorMapType.put(
-                Sensor.TYPE_ACCELEROMETER, "acceleration"
+                Sensor.TYPE_ACCELEROMETER, "accelerometer"
             )
             if (VERSION.SDK_INT >= VERSION_CODES.O) {
                 sensorMapType.put(

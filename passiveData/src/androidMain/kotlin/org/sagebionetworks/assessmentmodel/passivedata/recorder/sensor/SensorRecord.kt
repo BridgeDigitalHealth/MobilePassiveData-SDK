@@ -75,7 +75,7 @@ data class FirstRecord(
     override val timestamp: Long?,
     override val sensorType: String?,
     override val uptime: Long?,
-    override val eventAccuracy: Int?,
+    override val eventAccuracy: Int? = null,
     @Transient val sensor: Sensor? = null
 ) : SensorRecord
 

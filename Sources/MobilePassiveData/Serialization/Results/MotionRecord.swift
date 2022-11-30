@@ -45,7 +45,8 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     public let timestamp: SecondDuration?
 
     /// An identifier marking the current step.
-    public let stepPath: String
+    public var stepPath: String { _stepPath ?? "" }
+    private let _stepPath: String?
 
     /// The date timestamp when the measurement was taken (if available).
     public let timestampDate: Date?
@@ -79,13 +80,13 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     public let w: Double?
 
     private enum CodingKeys : String, OrderedEnumCodingKey {
-        case uptime, timestamp, stepPath, timestampDate, sensorType, eventAccuracy, referenceCoordinate, heading, x, y, z, w
+        case uptime, timestamp, _stepPath = "stepPath", timestampDate, sensorType, eventAccuracy, referenceCoordinate, heading, x, y, z, w
     }
 
     fileprivate init(uptime: ClockUptime?, timestamp: SecondDuration?, stepPath: String, timestampDate: Date?, sensorType: MotionRecorderType?, eventAccuracy: Int?, referenceCoordinate: AttitudeReferenceFrame?, heading: Double?, x: Double?, y: Double?, z: Double?, w: Double?) {
         self.uptime = uptime
         self.timestamp = timestamp
-        self.stepPath = stepPath
+        self._stepPath = stepPath
         self.timestampDate = timestampDate
         self.sensorType = sensorType
         self.eventAccuracy = eventAccuracy
@@ -103,7 +104,7 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
     ///     - stepPath: The current step path.
     ///     - data: The raw sensor data to record.
     public init(stepPath: String, data: MotionVectorData, uptime: ClockUptime, timestamp: SecondDuration) {
-        self.stepPath = stepPath
+        self._stepPath = stepPath
         self.uptime = uptime
         self.timestamp = timestamp
         self.timestampDate = nil
@@ -167,7 +168,7 @@ public struct MotionRecord : SampleRecord, DelimiterSeparatedEncodable {
 
         self.uptime = uptime
         self.timestamp = timestamp
-        self.stepPath = stepPath
+        self._stepPath = stepPath
         self.timestampDate = nil
         self.sensorType = sensorType
         self.eventAccuracy = eventAccuracy
@@ -299,7 +300,7 @@ extension MotionRecord : DocumentableStruct {
     }
 
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
-        (codingKey as? CodingKeys) == CodingKeys.stepPath
+        false
     }
     
     public static func documentProperty(for codingKey: CodingKey) throws -> DocumentProperty {
@@ -311,7 +312,7 @@ extension MotionRecord : DocumentableStruct {
             return .init(propertyType: .primitive(.number), propertyDescription: "System clock time.")
         case .timestamp:
             return .init(propertyType: .primitive(.number), propertyDescription: "Time that the system has been awake since last reboot.")
-        case .stepPath:
+        case ._stepPath:
             return .init(propertyType: .primitive(.string), propertyDescription: "An identifier marking the current step.")
         case .timestampDate:
             return .init(propertyType: .format(.dateTime), propertyDescription: "The date timestamp when the measurement was taken (if available).")

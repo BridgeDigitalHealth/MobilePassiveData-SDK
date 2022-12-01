@@ -70,7 +70,7 @@ val sensorRecordModule = SerializersModule {
 }
 
 @Serializable
-@SerialName("FirstRecord")
+@SerialName("RecordMarker")
 data class FirstRecord(
     override val timestampDate: Instant? = null,
     override val timestamp: Long?,

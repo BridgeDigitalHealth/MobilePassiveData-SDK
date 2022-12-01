@@ -70,12 +70,13 @@ val sensorRecordModule = SerializersModule {
 }
 
 @Serializable
+@SerialName("RecordMarker")
 data class FirstRecord(
     override val timestampDate: Instant? = null,
     override val timestamp: Long?,
     override val sensorType: String?,
     override val uptime: Long?,
-    override val eventAccuracy: Int?,
+    override val eventAccuracy: Int? = null,
     @Transient val sensor: Sensor? = null
 ) : SensorRecord
 
@@ -92,6 +93,7 @@ fun SensorEvent.createFirstRecord(): FirstRecord {
 
 @ExperimentalSerializationApi
 @Serializable
+@SerialName("AccelerationRecord")
 data class AccelerationRecord(
     override val timestamp: Long?,
     override val sensorType: String?,
@@ -122,6 +124,7 @@ fun SensorEvent.createAccelerationRecord(referenceTimestamp: Long): Acceleration
 
 @ExperimentalSerializationApi
 @Serializable
+@SerialName("GyroscopeRecord")
 data class GyroscopeRecord(
     override val timestamp: Long?,
     override val sensorType: String?,
@@ -151,6 +154,7 @@ fun SensorEvent.createGyroscopeRecord(referenceTimestamp: Long): GyroscopeRecord
 
 @ExperimentalSerializationApi
 @Serializable
+@SerialName("MagneticRecord")
 data class MagneticRecord(
     override val timestamp: Long?,
     override val sensorType: String?,
@@ -185,6 +189,7 @@ fun SensorEvent.createMagneticRecord(referenceTimestamp: Long): MagneticRecord {
  * @param w cos(theta/2)
  */
 @Serializable
+@SerialName("RotationRecord")
 data class RotationRecord(
     override val timestamp: Long?,
     override val sensorType: String?,
@@ -241,6 +246,7 @@ fun SensorEvent.createRotationRecord(referenceTimestamp: Long): RotationRecord {
 }
 
 @Serializable
+@SerialName("UncalibratedRecord")
 data class UncalibratedRecord(
     override val timestamp: Long?,
     override val sensorType: String?,

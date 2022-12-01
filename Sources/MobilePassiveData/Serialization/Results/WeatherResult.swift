@@ -117,10 +117,10 @@ public protocol WeatherServiceResponse {
 
 public struct WeatherServiceResult : Codable, Equatable, WeatherServiceResponse {
     private enum CodingKeys : String, OrderedEnumCodingKey {
-        case serviceType = "type", identifier, providerName = "provider", startDate,
+        case identifier, providerName = "provider", startDate,
              temperature, seaLevelPressure, groundLevelPressure, humidity, clouds, rain, snow, wind
     }
-    public private(set) var serviceType: WeatherServiceType = .weather
+    public var serviceType: WeatherServiceType { .weather }
 
     public let identifier: String
     public let providerName: WeatherServiceProviderName
@@ -216,7 +216,7 @@ extension WeatherServiceResult : DocumentableStruct {
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
         guard let key = codingKey as? CodingKeys else { return false }
         switch key {
-        case .identifier,.serviceType,.providerName,.startDate:
+        case .identifier,.providerName,.startDate:
             return true
         default:
             return false
@@ -230,8 +230,6 @@ extension WeatherServiceResult : DocumentableStruct {
         switch key {
         case .identifier:
             return .init(propertyType: .primitive(.string), propertyDescription: "Result identifier")
-        case .serviceType:
-            return .init(constValue: WeatherServiceType.weather)
         case .providerName:
             return .init(propertyType: .reference(WeatherServiceProviderName.documentableType()))
         case .startDate:
@@ -303,9 +301,9 @@ extension WeatherServiceResult.Wind : DocumentableStruct {
 
 public struct AirQualityServiceResult : Codable, Equatable, WeatherServiceResponse {
     private enum CodingKeys : String, OrderedEnumCodingKey {
-        case serviceType = "type", identifier, providerName = "provider", startDate, aqi, category
+        case identifier, providerName = "provider", startDate, aqi, category
     }
-    public private(set) var serviceType: WeatherServiceType = .airQuality
+    public var serviceType: WeatherServiceType { .airQuality }
     
     public let identifier: String
     public let providerName: WeatherServiceProviderName
@@ -384,8 +382,6 @@ extension AirQualityServiceResult : DocumentableStruct {
             return .init(propertyType: .primitive(.string))
         case .startDate:
             return .init(propertyType: .format(.dateTime))
-        case .serviceType:
-            return .init(constValue: WeatherServiceType.airQuality)
         case .providerName:
             return .init(propertyType: .reference(WeatherServiceProviderName.documentableType()))
         case .aqi:

@@ -12,7 +12,7 @@ public let audioLevelRecordSchema = DocumentableRootArray(rootDocumentType: Audi
 
 public struct AudioLevelRecord : SampleRecord, Codable {
     private enum CodingKeys : String, OrderedEnumCodingKey {
-        case uptime, timestamp, stepPath, timestampDate, timeInterval, average, peak, unit
+        case uptime, timestamp, _stepPath = "stepPath", timestampDate, timeInterval, average, peak, unit
     }
 
     /// System clock time.
@@ -22,7 +22,8 @@ public struct AudioLevelRecord : SampleRecord, Codable {
     public let timestamp: SecondDuration?
 
     /// An identifier marking the current step.
-    public let stepPath: String
+    public var stepPath: String { _stepPath ?? "" }
+    private let _stepPath: String?
 
     /// The date timestamp when the measurement was taken (if available).
     public var timestampDate: Date?
@@ -49,7 +50,7 @@ public struct AudioLevelRecord : SampleRecord, Codable {
                 unit: String?) {
         self.uptime = uptime
         self.timestamp = timestamp
-        self.stepPath = stepPath
+        self._stepPath = stepPath
         self.timestampDate = timestampDate
         self.timeInterval = timeInterval
         self.average = average
@@ -65,7 +66,7 @@ extension AudioLevelRecord : DocumentableStruct {
     }
     
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
-        (codingKey as? CodingKeys) == CodingKeys.stepPath
+        false
     }
     
     public static func documentProperty(for codingKey: CodingKey) throws -> DocumentProperty {
@@ -85,7 +86,7 @@ extension AudioLevelRecord : DocumentableStruct {
             return .init(propertyType: .primitive(.number), propertyDescription: "System clock time.")
         case .timestamp:
             return .init(propertyType: .primitive(.number), propertyDescription: "Time that the system has been awake since last reboot.")
-        case .stepPath:
+        case ._stepPath:
             return .init(propertyType: .primitive(.string), propertyDescription: "An identifier marking the current step.")
         case .timestampDate:
             return .init(propertyType: .format(.dateTime), propertyDescription: "The date timestamp when the measurement was taken (if available).")

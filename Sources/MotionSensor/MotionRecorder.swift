@@ -253,10 +253,11 @@ open class MotionRecorder : SampleRecorder {
         guard !isPaused else { return }
         let frame = motionManager?.attitudeReferenceFrame ?? CMAttitudeReferenceFrame.xArbitraryZVertical
         Task {
-            async let uptime = clock.relativeUptime(to: data.timestamp)
-            async let timestamp = clock.zeroRelativeTime(to: data.timestamp)
-            async let stepPath = stepPath(for: data.timestamp)
-            let samples = await samples(from: data, frame: frame, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
+            let dataTimestamp = data.timestamp
+            let uptime = await clock.relativeUptime(to: dataTimestamp)
+            let timestamp = await clock.zeroRelativeTime(to: dataTimestamp)
+            let stepPath = await stepPath(uptime: uptime)
+            let samples = samples(from: data, frame: frame, stepPath: stepPath, uptime: uptime, timestamp: timestamp)
             self.writeSamples(samples)
         }
     }

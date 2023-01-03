@@ -357,7 +357,11 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     
     @MainActor public final func stepPath(for timestamp: SystemUptime) -> String {
         let uptime = clock.relativeUptime(to: timestamp)
-        return markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
+        return stepPath(uptime: uptime)
+    }
+    
+    @MainActor public final func stepPath(uptime: ClockUptime) -> String {
+        markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
     }
     
     /// This method should be called on the main thread with the completion handler also called on

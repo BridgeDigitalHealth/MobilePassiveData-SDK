@@ -47,6 +47,26 @@ public protocol ClockProxy : AnyObject {
     @MainActor func zeroRelativeTime(to timestamp: SystemUptime) -> SecondDuration
 }
 
+@MainActor final class Markers {
+    
+    nonisolated init() {
+    }
+    
+    /// A list of the record markers denoting each step change.
+    var markers: [(uptime: ClockUptime, stepPath: String)] = []
+    
+    func append(_ uptime: ClockUptime, _ stepPath: String) {
+        markers.append((uptime, stepPath))
+    }
+    
+    func stepPath(uptime: ClockUptime) -> String? {
+        markers.enumerated().first(where: { offset, element in
+            element.uptime < uptime &&
+            (offset + 1 == markers.count || markers[offset + 1].uptime > uptime)
+        }).map { $1.stepPath }
+    }
+}
+
 /// `SampleRecorder` is a base-class implementation of a controller that is used to record samples.
 ///
 /// While it isn't prohibited to instantiate this class directly, this is *intended* as an abstract
@@ -129,7 +149,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     public let errorNotification = PassthroughSubject<Error, Never>()
     
     /// A list of the record markers denoting each step change.
-    @MainActor private var markers: [(uptime: ClockUptime, stepPath: String)] = []
+    var markers: Markers = .init()
 
     /// Results for this recorder.
     ///
@@ -345,7 +365,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
                 let clockUptime = clock.relativeUptime(to: systemUptime)
                 let timestamp = clock.zeroRelativeTime(to: systemUptime)
                 currentStepPath = stepPath
-                markers.append((clockUptime, stepPath))
+                markers.append(clockUptime, stepPath)
                 _writeMarkers(stepPath: stepPath, uptime: clockUptime, timestamp: timestamp, date: date)
             }
             didMoveTo(stepPath: stepPath)
@@ -361,7 +381,7 @@ open class SampleRecorder : NSObject, AsyncActionController, ObservableObject {
     }
     
     @MainActor public final func stepPath(uptime: ClockUptime) -> String {
-        markers.first(where: { $0.uptime < uptime }).map { $0.stepPath } ?? currentStepPath
+        markers.stepPath(uptime: uptime) ?? currentStepPath
     }
     
     /// This method should be called on the main thread with the completion handler also called on

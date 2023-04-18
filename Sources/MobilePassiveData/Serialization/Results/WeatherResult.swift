@@ -370,7 +370,13 @@ extension AirQualityServiceResult : DocumentableStruct {
     }
     
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
-        true
+        guard let key = codingKey as? CodingKeys else { return false }
+        switch key {
+        case .identifier,.providerName,.startDate:
+            return true
+        default:
+            return false
+        }
     }
     
     public static func documentProperty(for codingKey: CodingKey) throws -> DocumentProperty {

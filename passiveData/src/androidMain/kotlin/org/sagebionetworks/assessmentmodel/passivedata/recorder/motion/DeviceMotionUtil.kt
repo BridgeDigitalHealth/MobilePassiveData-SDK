@@ -357,8 +357,15 @@ class DeviceMotionUtil {
              * @param sensorTimestamp
              * sensor timestamp
              * @return instant corresponding to sensor timestamp
+             * Used to set the timestampDate on the first sensor event
              */
             fun instantOf(sensorTimestamp: Long): Instant {
+                if (sensorTimestamp > SystemClock.elapsedRealtimeNanos()) {
+                    // Adding this special case to prevent crash when running tests on an Android emulator -nbrown 03/31/2023
+                    // Shouldn't ever get here as that would imply sensor event occurred in the future.
+                    // However, running tests with Github actions on an emulator gets into this state.
+                    return Clock.System.now()
+                }
                 return Clock.System.now()
                     .minus(DateTimeUnit.TimeBased(SystemClock.elapsedRealtimeNanos() - sensorTimestamp))
             }

@@ -24,6 +24,13 @@ public class AudioRecorder(
 
     var firstEventUptimeReference = AtomicReference<Long>()
 
+    /**
+     * Using "microphone" as a permission and default identifier was originally mapped to
+     * audio recordings in older applications, so recording the "microphone levels" as the
+     * default JSON log file requires changing the default filename.
+     */
+    override fun defaultLoggerIdentifier(): String = "${super.defaultLoggerIdentifier()}_levels"
+
     override fun serializeElement(e: Int) {
         var timestampDate : Instant? = null
         val now = Clock.System.now()

@@ -23,9 +23,9 @@ import JsonModel
 ///            }
 ///            """.data(using: .utf8)! // our data in native (JSON) format
 /// ```
-public struct AudioRecorderConfigurationObject : RecorderConfiguration, Codable {
+public struct AudioRecorderConfigurationObject : RestartableRecorderConfiguration, Codable {
     private enum CodingKeys : String, OrderedEnumCodingKey {
-        case identifier, asyncActionType = "type", startStepIdentifier, stopStepIdentifier, _requiresBackgroundAudio = "requiresBackgroundAudio", saveAudioFile = "saveAudioFile"
+        case identifier, asyncActionType = "type", startStepIdentifier, stopStepIdentifier, _requiresBackgroundAudio = "requiresBackgroundAudio", saveAudioFile = "saveAudioFile", _shouldDeletePrevious = "shouldDeletePrevious"
     }
     
     /// A short string that uniquely identifies the asynchronous action within the task. If started
@@ -57,6 +57,13 @@ public struct AudioRecorderConfigurationObject : RecorderConfiguration, Codable 
     }
     private let _requiresBackgroundAudio: Bool?
     
+    /// Should the previous recording be deleted on restart?
+    public var shouldDeletePrevious: Bool {
+        return _shouldDeletePrevious ?? true
+    }
+    private let _shouldDeletePrevious: Bool?
+    
+    
     /// Should the audio recording be saved? Default = `false`.
     ///
     /// If `true` then the audio file used to measure meter levels is saved with the results.
@@ -70,12 +77,13 @@ public struct AudioRecorderConfigurationObject : RecorderConfiguration, Codable 
     ///     - motionStepIdentifier: Optional identifier for the step that records distance travelled.
     ///     - startStepIdentifier: An identifier marking the step to start the action. Default = `nil`.
     ///     - stopStepIdentifier: An identifier marking the step to stop the action.  Default = `nil`.
-    public init(identifier: String, startStepIdentifier: String? = nil, stopStepIdentifier: String? = nil, requiresBackgroundAudio: Bool = false, saveAudioFile: Bool? = nil) {
+    public init(identifier: String, startStepIdentifier: String? = nil, stopStepIdentifier: String? = nil, requiresBackgroundAudio: Bool = false, saveAudioFile: Bool? = nil, shouldDeletePrevious: Bool? = nil) {
         self.identifier = identifier
         self.startStepIdentifier = startStepIdentifier
         self.stopStepIdentifier = stopStepIdentifier
         self._requiresBackgroundAudio = requiresBackgroundAudio
         self.saveAudioFile = saveAudioFile
+        self._shouldDeletePrevious = shouldDeletePrevious
     }
     
     /// Returns `location` and `motion` on iOS. Returns an empty set on platforms that do not
@@ -117,7 +125,7 @@ extension AudioRecorderConfigurationObject : DocumentableStruct {
             return .init(propertyType: .primitive(.string))
         case .startStepIdentifier, .stopStepIdentifier:
             return .init(propertyType: .primitive(.string))
-        case ._requiresBackgroundAudio, .saveAudioFile:
+        case ._requiresBackgroundAudio, .saveAudioFile, ._shouldDeletePrevious:
             return .init(propertyType: .primitive(.boolean))
         }
     }

@@ -43,7 +43,7 @@ abstract class FlowJsonFileResultRecorder<in E>(
     private val isFirstJsonObject = AtomicBoolean(true)
 
     override fun start() {
-        file = getTaskOutputFile("$identifier.json")
+        file = getTaskOutputFile("${defaultLoggerIdentifier()}.json")
         filePrintStream = PrintStream(file)
         filePrintStream.print(JSON_FILE_START)
         super.start()
@@ -71,6 +71,21 @@ abstract class FlowJsonFileResultRecorder<in E>(
     }
 
     abstract fun serializeElement(e: E)
+
+    /**
+     * The default logger is a file with markers for each step transition.
+     *
+     * Recorders can have multiple files associated with them. For example, an
+     * audio recorder ("microphone") can record audio to an mp4 and microphone
+     * levels to a log file. In that case, by convention, the primary file is
+     * has the filename "microphone.mp4" and the secondary logging file that
+     * logs the microphone levels is named "microphone_levels.json".
+     *
+     * - Note: This library does not currently support non-JSON recordings, but
+     * is structured this way to keep it consistent with iOS where mp4, jpeg, etc.
+     * have been supported for previously implemented assessments. syoung 04/27/2023
+     */
+    open fun defaultLoggerIdentifier(): String = identifier
 
     override fun completedHandlingFlow(e: Throwable?) {
         Napier.i("Completed handling flow")

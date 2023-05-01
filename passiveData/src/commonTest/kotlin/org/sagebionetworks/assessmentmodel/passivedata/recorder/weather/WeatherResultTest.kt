@@ -5,12 +5,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.plus
 import org.sagebionetworks.assessmentmodel.Result
 import org.sagebionetworks.assessmentmodel.passivedata.resultDataSerializersModule
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class WeatherResultTest {
     @Serializable
@@ -33,6 +32,18 @@ class WeatherResultTest {
         val deserialized = jsonCoder.decodeFromString<ResultDataWrapper>(json)
 
         assertTrue(deserialized.resultData is WeatherResult)
+    }
+
+    @Test
+    fun testNullResult() {
+        val weatherResult = WeatherResult("identifier", weather = null, airQuality = null)
+
+        val json = weatherResult.getJsonArchivableFile("foo").json
+        val deserialized = Json.decodeFromString<JsonObject>(json)
+
+        assertNull(deserialized["weather"])
+        assertNull(deserialized["airQuality"])
+        assertFalse(json.contains("null"))
     }
 
     @Test

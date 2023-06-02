@@ -24,6 +24,9 @@ public class AudioRecorder(
 
     var firstEventUptimeReference = AtomicReference<Long>()
 
+    override val jsonSchemaUrl: String
+        get() = "https://sage-bionetworks.github.io/mobile-client-json/schemas/v2/AudioLevelRecord.json"
+
     /**
      * Using "microphone" as a permission and default identifier was originally mapped to
      * audio recordings in older applications, so recording the "microphone levels" as the

@@ -36,6 +36,9 @@ class DeviceMotionJsonFileResultRecorder(
     ) {
     var firstEventUptimeReference = AtomicReference<Long>()
 
+    override val jsonSchemaUrl: String
+        get() = "https://sage-bionetworks.github.io/mobile-client-json/schemas/v2/MotionRecord.json"
+
     @ExperimentalSerializationApi
     @ExperimentalTime
     @ExperimentalStdlibApi

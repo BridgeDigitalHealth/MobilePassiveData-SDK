@@ -42,6 +42,8 @@ abstract class FlowJsonFileResultRecorder<in E>(
 
     private val isFirstJsonObject = AtomicBoolean(true)
 
+    internal abstract val jsonSchemaUrl: String
+
     override fun start() {
         file = getTaskOutputFile("${defaultLoggerIdentifier()}.json")
         filePrintStream = PrintStream(file)
@@ -98,7 +100,8 @@ abstract class FlowJsonFileResultRecorder<in E>(
                     endDateTime = endTime ?: Clock.System.now(),
                     filename = file.name,
                     contentType = JSON_MIME_CONTENT_TYPE,
-                    path = file.path
+                    path = file.path,
+                    jsonSchema = jsonSchemaUrl
                 )
             )
             _asyncStatus = AsyncActionStatus.FINISHED

@@ -70,7 +70,7 @@ public final class AsyncActionConfigurationSerializer : IdentifiableInterfaceSer
     }
     
     public var jsonSchema: URL {
-        URL(string: "\(self.interfaceName).json", relativeTo: kSageJsonSchemaBaseURL)!
+        URL(string: "\(self.interfaceName).json", relativeTo: kBDHJsonSchemaBaseURL)!
     }
 
     override init() {

@@ -53,7 +53,7 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
         .package(name: "JsonModel",
-                 url: "https://github.com/Sage-Bionetworks/JsonModel-Swift.git",
+                 url: "https://github.com/BridgeDigitalHealth/JsonModel-Swift.git",
                  "1.6.0"..<"3.0.0"),
     ],
     targets: [

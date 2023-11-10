@@ -99,7 +99,7 @@ kotlin {
                 implementation(Deps.Koin.android)
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             dependencies {
                 implementation(Deps.Coroutines.test)
                 implementation(kotlin("test-junit"))
@@ -122,6 +122,7 @@ android {
         minSdk = 21
         targetSdk = 31
     }
+    namespace = "org.sagebionetworks.assessmentmodel.passivedata"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

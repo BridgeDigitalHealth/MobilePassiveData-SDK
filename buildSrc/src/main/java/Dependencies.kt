@@ -1,14 +1,14 @@
 object Versions {
 
-    const val assessmentVersion = "0.10.1"
+    const val assessmentVersion = "1.1.3"
 
-    const val kotlinxDateTime = "0.4.0"
+    const val kotlinxDateTime = "0.4.1"
 
-    const val kotlin = "1.7.0"
-    const val kotlinxSerializationJson = "1.3.2"
-    const val kotlinCoroutines = "1.6.4"
+    const val kotlin = "1.9.10"
+    const val kotlinxSerializationJson = "1.6.0"
+    const val kotlinCoroutines = "1.7.2"
 
-    const val ktor = "2.1.1"
+    const val ktor = "2.3.2"
 
     const val koin = "3.1.5"
 
@@ -29,7 +29,7 @@ object Deps {
 
     object AssessmentModel {
         val results =
-            "org.sagebionetworks.assessmentmodel:assessmentResults:${Versions.assessmentVersion}"
+            "org.sagebionetworks.assessmentmodel:assessmentresults:${Versions.assessmentVersion}"
     }
 
     object Ktor {

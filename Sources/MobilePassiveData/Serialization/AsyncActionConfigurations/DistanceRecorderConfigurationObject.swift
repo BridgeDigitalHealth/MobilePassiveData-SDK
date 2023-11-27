@@ -21,18 +21,13 @@ import JsonModel
 ///            }
 ///            """.data(using: .utf8)! // our data in native (JSON) format
 /// ```
-@available(iOS 10.0, *)
-public struct DistanceRecorderConfigurationObject : DistanceRecorderConfiguration, Codable {
-    private enum CodingKeys : String, OrderedEnumCodingKey {
-        case identifier, asyncActionType = "type", motionStepIdentifier, startStepIdentifier, stopStepIdentifier, usesCSVEncoding
-    }
+@Serializable
+@SerialName("distance")
+public struct DistanceRecorderConfigurationObject : DistanceRecorderConfiguration {
     
     /// A short string that uniquely identifies the asynchronous action within the task. If started
     /// asynchronously, then the identifier maps to a result stored in `RSDTaskResult.asyncResults`.
     public let identifier: String
-    
-    /// The standard permission type associated with this configuration.
-    public private(set) var asyncActionType: AsyncActionType = .distance
     
     /// Identifier for the step that records distance travelled. The recorder uses this step to record
     /// distance travelled while the other steps in the task are assumed to be standing still.
@@ -62,13 +57,9 @@ public struct DistanceRecorderConfigurationObject : DistanceRecorderConfiguratio
         self.stopStepIdentifier = stopStepIdentifier
     }
     
-    
     /// Do nothing. No validation is required for this recorder.
     public func validate() throws {
     }
-}
-
-extension DistanceRecorderConfigurationObject : SerializableAsyncActionConfiguration {
 }
 
 extension DistanceRecorderConfigurationObject : DocumentableStruct {
@@ -78,7 +69,7 @@ extension DistanceRecorderConfigurationObject : DocumentableStruct {
     
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
         guard let key = codingKey as? CodingKeys else { return false }
-        return key == .asyncActionType || key == .identifier
+        return key == .typeName || key == .identifier
     }
     
     public static func documentProperty(for codingKey: CodingKey) throws -> DocumentProperty {
@@ -86,8 +77,8 @@ extension DistanceRecorderConfigurationObject : DocumentableStruct {
             throw DocumentableError.invalidCodingKey(codingKey, "\(codingKey) is not recognized for this class")
         }
         switch key {
-        case .asyncActionType:
-            return .init(constValue: AsyncActionType.distance)
+        case .typeName:
+            return .init(constValue: serialTypeName)
         case .identifier:
             return .init(propertyType: .primitive(.string))
         case .startStepIdentifier, .stopStepIdentifier, .motionStepIdentifier:

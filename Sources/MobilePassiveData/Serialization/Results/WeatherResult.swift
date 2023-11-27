@@ -7,21 +7,15 @@ import Foundation
 import JsonModel
 import ResultModel
 
-extension SerializableResultType {
-    public static let weather: SerializableResultType = "weather"
-}
-
 /// A `WeatherResult` includes results for both weather and air quality in a consolidated result.
 /// Because this result must be mutable, it is defined as a class.
-public final class WeatherResult : SerializableResultData {
-    private enum CodingKeys : String, OrderedEnumCodingKey {
-        case identifier, serializableType = "type", startDate, endDate, weather, airQuality
-    }
-    public private(set) var serializableType: SerializableResultType = .weather
+@Serializable
+@SerialName("weather")
+public final class WeatherResult : MultiplatformResultData {
 
     public let identifier: String
-    public var startDate: Date = Date()
-    public var endDate: Date = Date()
+    @SerialName("startDate") public var startDateTime: Date = Date()
+    @SerialName("endDate") public var endDateTime: Date?
     public var weather: WeatherServiceResult?
     public var airQuality: AirQualityServiceResult?
     
@@ -31,8 +25,8 @@ public final class WeatherResult : SerializableResultData {
     
     public func deepCopy() -> WeatherResult {
         let copy = WeatherResult(identifier: identifier)
-        copy.startDate = startDate
-        copy.endDate = endDate
+        copy.startDateTime = startDateTime
+        copy.endDateTime = endDateTime
         copy.weather = weather
         copy.airQuality = airQuality
         return copy
@@ -76,7 +70,7 @@ extension WeatherResult : DocumentableStruct {
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
         guard let key = codingKey as? CodingKeys else { return false }
         switch key {
-        case .identifier, .serializableType, .startDate:
+        case .identifier, .typeName, .startDateTime:
             return true
         default:
             return false
@@ -88,11 +82,11 @@ extension WeatherResult : DocumentableStruct {
             throw DocumentableError.invalidCodingKey(codingKey, "\(codingKey) is not recognized for this class")
         }
         switch key {
-        case .serializableType:
-            return .init(constValue: SerializableResultType.weather)
+        case .typeName:
+            return .init(constValue: serialTypeName)
         case .identifier:
             return .init(propertyType: .primitive(.string))
-        case .startDate, .endDate:
+        case .startDateTime, .endDateTime:
             return .init(propertyType: .format(.dateTime))
         case .airQuality:
             return .init(propertyType: .reference(AirQualityServiceResult.documentableType()))

@@ -9,6 +9,7 @@ import JsonModel
 
 /// `AsyncActionType` is an extendable string enum used by the `SerializationFactory` to
 /// create the appropriate result type.
+@available(*, deprecated, message: "Use `typeName` directly.")
 public struct AsyncActionType : TypeRepresentable, Codable, Hashable {
 
     public let rawValue: String
@@ -35,12 +36,14 @@ public struct AsyncActionType : TypeRepresentable, Codable, Hashable {
     }
 }
 
+@available(*, deprecated, message: "Use `typeName` directly.")
 extension AsyncActionType : ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
         self.init(rawValue: value)
     }
 }
 
+@available(*, deprecated, message: "Use `typeName` directly.")
 extension AsyncActionType : DocumentableStringLiteral {
     public static func examples() -> [String] {
         return allStandardTypes().map{ $0.rawValue }
@@ -50,16 +53,17 @@ extension AsyncActionType : DocumentableStringLiteral {
 /// `SerializableAsyncActionConfiguration` is the base implementation for `AsyncActionConfiguration`
 /// that is serialized using the `Codable` protocol and the polymorphic serialization defined by
 /// this framework.
-///
+@available(*, deprecated, message: "Use `AsyncActionConfiguration` directly.")
 public protocol SerializableAsyncActionConfiguration : AsyncActionConfiguration, PolymorphicRepresentable, Encodable {
     var asyncActionType: AsyncActionType { get }
 }
 
+@available(*, deprecated, message: "Use `AsyncActionConfiguration` directly.")
 extension SerializableAsyncActionConfiguration {
     public var typeName: String { asyncActionType.stringValue }
 }
 
-public final class AsyncActionConfigurationSerializer : IdentifiableInterfaceSerializer, PolymorphicSerializer {
+public final class AsyncActionConfigurationSerializer : GenericPolymorphicSerializer<AsyncActionConfiguration>, DocumentableInterface {
     public var documentDescription: String? {
         """
         `AsyncActionConfiguration` defines general configuration for an asynchronous action
@@ -74,25 +78,12 @@ public final class AsyncActionConfigurationSerializer : IdentifiableInterfaceSer
     }
 
     override init() {
-        self.examples = [
+        super.init([
             AudioRecorderConfigurationObject.examples().first!,
             DistanceRecorderConfigurationObject.examples().first!,
             MotionRecorderConfigurationObject.examples().first!,
             WeatherConfigurationObject.examples().first!,
-        ]
-    }
-
-    public private(set) var examples: [AsyncActionConfiguration]
-
-    public override class func typeDocumentProperty() -> DocumentProperty {
-        .init(propertyType: .reference(AsyncActionType.documentableType()))
-    }
-
-    public func add(_ example: SerializableAsyncActionConfiguration) {
-        if let idx = examples.firstIndex(where: { $0.typeName == example.typeName }) {
-            examples.remove(at: idx)
-        }
-        examples.append(example)
+        ])
     }
 }
 

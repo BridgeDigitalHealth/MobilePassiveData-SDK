@@ -23,17 +23,13 @@ import JsonModel
 ///            }
 ///            """.data(using: .utf8)! // our data in native (JSON) format
 /// ```
+@Serializable
+@SerialName("microphone")
 public struct AudioRecorderConfigurationObject : RestartableRecorderConfiguration, Codable {
-    private enum CodingKeys : String, OrderedEnumCodingKey {
-        case identifier, asyncActionType = "type", startStepIdentifier, stopStepIdentifier, _requiresBackgroundAudio = "requiresBackgroundAudio", saveAudioFile = "saveAudioFile", _shouldDeletePrevious = "shouldDeletePrevious"
-    }
-    
+  
     /// A short string that uniquely identifies the asynchronous action within the task. If started
     /// asynchronously, then the identifier maps to a result stored in `RSDTaskResult.asyncResults`.
     public let identifier: String
-    
-    /// The standard permission type associated with this configuration.
-    public private(set) var asyncActionType: AsyncActionType = .microphone
     
     /// An identifier marking the step to start the action. If `nil`, then the action will be started when
     /// the task is started.
@@ -52,17 +48,10 @@ public struct AudioRecorderConfigurationObject : RestartableRecorderConfiguratio
     /// under the "Capabilities" tab of the Xcode project, and will need to select "Audio, AirPlay, and
     /// Picture in Picture".
     ///
-    public var requiresBackgroundAudio: Bool {
-        return _requiresBackgroundAudio ?? false
-    }
-    private let _requiresBackgroundAudio: Bool?
+    public private(set) var requiresBackgroundAudio: Bool = false
     
     /// Should the previous recording be deleted on restart?
-    public var shouldDeletePrevious: Bool {
-        return _shouldDeletePrevious ?? true
-    }
-    private let _shouldDeletePrevious: Bool?
-    
+    public private(set) var shouldDeletePrevious: Bool = true
     
     /// Should the audio recording be saved? Default = `false`.
     ///
@@ -71,23 +60,7 @@ public struct AudioRecorderConfigurationObject : RestartableRecorderConfiguratio
     /// when the recording stops.
     public var saveAudioFile: Bool?
     
-    /// Default initializer.
-    /// - parameters:
-    ///     - identifier: The configuration identifier.
-    ///     - motionStepIdentifier: Optional identifier for the step that records distance travelled.
-    ///     - startStepIdentifier: An identifier marking the step to start the action. Default = `nil`.
-    ///     - stopStepIdentifier: An identifier marking the step to stop the action.  Default = `nil`.
-    public init(identifier: String, startStepIdentifier: String? = nil, stopStepIdentifier: String? = nil, requiresBackgroundAudio: Bool = false, saveAudioFile: Bool? = nil, shouldDeletePrevious: Bool? = nil) {
-        self.identifier = identifier
-        self.startStepIdentifier = startStepIdentifier
-        self.stopStepIdentifier = stopStepIdentifier
-        self._requiresBackgroundAudio = requiresBackgroundAudio
-        self.saveAudioFile = saveAudioFile
-        self._shouldDeletePrevious = shouldDeletePrevious
-    }
-    
-    /// Returns `location` and `motion` on iOS. Returns an empty set on platforms that do not
-    /// support distance recording.
+    /// Returns `microphone` on iOS. Returns an empty set on other platforms.
     public var permissionTypes: [PermissionType] {
         #if os(iOS)
             return [StandardPermissionType.microphone]
@@ -101,9 +74,6 @@ public struct AudioRecorderConfigurationObject : RestartableRecorderConfiguratio
     }
 }
 
-extension AudioRecorderConfigurationObject : SerializableAsyncActionConfiguration {
-}
-
 extension AudioRecorderConfigurationObject : DocumentableStruct {
     public static func codingKeys() -> [CodingKey] {
         return CodingKeys.allCases
@@ -111,7 +81,7 @@ extension AudioRecorderConfigurationObject : DocumentableStruct {
     
     public static func isRequired(_ codingKey: CodingKey) -> Bool {
         guard let key = codingKey as? CodingKeys else { return false }
-        return key == .asyncActionType || key == .identifier
+        return key == .typeName || key == .identifier
     }
     
     public static func documentProperty(for codingKey: CodingKey) throws -> DocumentProperty {
@@ -119,13 +89,13 @@ extension AudioRecorderConfigurationObject : DocumentableStruct {
             throw DocumentableError.invalidCodingKey(codingKey, "\(codingKey) is not recognized for this class")
         }
         switch key {
-        case .asyncActionType:
-            return .init(constValue: AsyncActionType.microphone)
+        case .typeName:
+            return .init(constValue: serialTypeName)
         case .identifier:
             return .init(propertyType: .primitive(.string))
         case .startStepIdentifier, .stopStepIdentifier:
             return .init(propertyType: .primitive(.string))
-        case ._requiresBackgroundAudio, .saveAudioFile, ._shouldDeletePrevious:
+        case .requiresBackgroundAudio, .saveAudioFile, .shouldDeletePrevious:
             return .init(propertyType: .primitive(.boolean))
         }
     }

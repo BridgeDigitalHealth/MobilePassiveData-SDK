@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import JsonModel
 
 /// `AsyncActionConfiguration` defines general configuration for an asynchronous background action
 /// that should be run in the background. Depending upon the parameters and how the action is set
@@ -15,7 +16,7 @@ import Foundation
 ///
 /// - seealso: `AsyncActionController`.
 ///
-public protocol AsyncActionConfiguration : PermissionsConfiguration {
+public protocol AsyncActionConfiguration : PermissionsConfiguration, PolymorphicTyped {
     
     /// A short string that uniquely identifies the asynchronous action within the task.
     var identifier : String { get }

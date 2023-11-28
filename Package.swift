@@ -45,16 +45,14 @@ let package = Package(
         .library(
             name: "WeatherRecorder",
             targets: ["WeatherRecorder"]),
-        .library(
-            name: "DistanceRecorder",
-            targets: ["DistanceRecorder"]),
+
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
         .package(name: "JsonModel",
                  url: "https://github.com/BridgeDigitalHealth/JsonModel-Swift.git",
-                 from: "2.2.0"),
+                 from: "2.4.2"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -104,8 +102,9 @@ let package = Package(
         // This library implements the recorder associated with the `MotionRecorderConfiguration`
         // defined in the base library for this package.
         //
-        // Use of this library requires registering the `MotionAuthorization` adapter and adding
-        // any privacy keys for using motion sensors to the app `Info.Plist`.
+        // syoung 11/27/2023 At this time, using motion sensors while the app is active no longer
+        // requires any permissions in the `Info.plist` file. However, permissions and entitlements
+        // must still be set up if the sensors are used in the background while the app is locked.
         .target(name: "MotionSensor",
                 dependencies: [
                     "JsonModel",
@@ -146,6 +145,10 @@ let package = Package(
                 "SharedResourcesTests",
             ]),
         
+        /* syoung 11/272023 This library is not used in any currently supported applications.
+         * It is included here for reference only and any new app development should revisit
+         * what sensors are available for recording distances when/if there is a need.
+         
         // Recorder for using `CoreLocation` and `CoreMotion` to record distances travelled.
         //
         // Use of this library requires adding appropriate privacy keys for using GPS and
@@ -157,6 +160,7 @@ let package = Package(
                     "MotionSensor",
                     "LocationAuthorization",
                 ]),
+         */
         
         // Unit test utilities.
         .target(name: "NSLocaleSwizzle",

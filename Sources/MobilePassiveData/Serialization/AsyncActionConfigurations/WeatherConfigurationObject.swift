@@ -6,12 +6,9 @@
 import Foundation
 import JsonModel
 
-public struct WeatherConfigurationObject : WeatherConfiguration {
-    private enum CodingKeys: String, OrderedEnumCodingKey {
-        case asyncActionType = "type", identifier, startStepIdentifier, _services = "services"
-    }
-
-    public private(set) var asyncActionType: AsyncActionType = .weather
+@Serializable
+@SerialName("weather")
+public struct WeatherConfigurationObject : WeatherConfiguration, Codable {
     
     public init(identifier: String, services: [WeatherServiceConfigurationObject], startStepIdentifier: String? = nil) {
         self.identifier = identifier
@@ -23,9 +20,9 @@ public struct WeatherConfigurationObject : WeatherConfiguration {
     public let startStepIdentifier: String?
     
     public var services: [WeatherServiceConfiguration] {
-        _services
+        return  _services
     }
-    private let _services: [WeatherServiceConfigurationObject]
+    @SerialName("services") private let _services: [WeatherServiceConfigurationObject]
     
     public var permissionTypes: [PermissionType] {
         [StandardPermissionType.locationWhenInUse]
@@ -33,9 +30,6 @@ public struct WeatherConfigurationObject : WeatherConfiguration {
     
     public func validate() throws {
     }
-}
-
-extension WeatherConfigurationObject : SerializableAsyncActionConfiguration {
 }
 
 public struct WeatherServiceConfigurationObject : Codable, WeatherServiceConfiguration {
@@ -70,8 +64,8 @@ extension WeatherConfigurationObject : DocumentableStruct {
         switch key {
         case .identifier:
             return .init(propertyType: .primitive(.string), propertyDescription: "Identifier for the weather services.")
-        case .asyncActionType:
-            return .init(constValue: AsyncActionType.weather)
+        case .typeName:
+            return .init(constValue: serialTypeName)
         case .startStepIdentifier:
             return .init(propertyType: .primitive(.string), propertyDescription: "Identifier for the step (if any) that should be used for starting services.")
         case ._services:

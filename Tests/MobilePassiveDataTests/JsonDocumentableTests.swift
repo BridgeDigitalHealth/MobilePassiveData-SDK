@@ -66,12 +66,12 @@ class JsonDocumentableTests: XCTestCase {
                         success = success && isSameType
 
                         // Check that the decoded type name is the same as the original type name
-                        guard let decodedTypeName = (decodedObject as? PolymorphicRepresentable)?.typeName
+                        guard let decodedTypeName = (decodedObject as? PolymorphicTyped)?.typeName
                             else {
                                 XCTFail("Decoded object does not conform to PolymorphicRepresentable. \(decodedObject)")
                                 return
                         }
-                        guard let originalTypeName = (original as? PolymorphicRepresentable)?.typeName
+                        guard let originalTypeName = (original as? PolymorphicTyped)?.typeName
                             else {
                                 XCTFail("Example object does not conform to PolymorphicRepresentable. \(original)")
                                 return

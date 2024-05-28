@@ -3,10 +3,10 @@
     "pins": [
       {
         "package": "JsonModel",
-        "repositoryURL": "https://github.com/BridgeDigitalHealth/JsonModel-Swift.git",
+        "repositoryURL": "https://github.com/BiAffectBridge/JsonModel-Swift.git",
         "state": {
           "branch": null,
-          "revision": "779cec7205ec51e5797c2db90894bdd89390525a",
+          "revision": "81a782fd5f7484ffd338f13fa6ad9300e2507a8a",
           "version": "2.4.2"
         }
       },
